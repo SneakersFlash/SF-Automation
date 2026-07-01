@@ -1,0 +1,132 @@
+// SNKRS Console — Prisma schema (SOT: SRS §13-17, MASTER-BRIEF §6)
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         String   @default("member") // owner | member
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model BrandProfile {
+  id              String          @id @default(cuid())
+  brandName       String
+  industry        String?
+  audience        String?
+  voiceAdjectives String?
+  voiceDo         String?
+  voiceDont       String?
+  platforms       String[]
+  outputLanguage  String          @default("id-ID")
+  visualAssets    String?
+  usp             String?
+  ctaDestinations String?
+  constraints     String?
+  isDefault       Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  subjects        Subject[]
+  generations     Generation[]
+  socialAccounts  SocialAccount[]
+}
+
+model Subject {
+  id             String        @id @default(cuid())
+  brandProfileId String?
+  brandProfile   BrandProfile? @relation(fields: [brandProfileId], references: [id])
+  name           String
+  details        Json? // { sku, colorway, price, dropType, specs }
+  goal           String?
+  createdAt      DateTime      @default(now())
+  generations    Generation[]
+}
+
+model Generation {
+  id             String        @id @default(cuid())
+  skill          String // content-brief | copywriting | humanize | ads-generate | content-drop
+  brandProfileId String?
+  brandProfile   BrandProfile? @relation(fields: [brandProfileId], references: [id])
+  subjectId      String?
+  subject        Subject?      @relation(fields: [subjectId], references: [id])
+  input          Json
+  output         Json
+  status         String        @default("done") // pending | done | error
+  userId         String?
+  createdAt      DateTime      @default(now())
+  adVariants     AdVariant[]
+}
+
+model AdVariant {
+  id           String      @id @default(cuid())
+  generationId String?
+  generation   Generation? @relation(fields: [generationId], references: [id])
+  angle        String // scarcity | price | styling | social_proof
+  hook         String
+  primaryText  String
+  headline     String
+  cta          String
+  visual       String?
+  createdAt    DateTime    @default(now())
+}
+
+model AdAction {
+  id         String    @id @default(cuid())
+  type       String // publish | scale
+  payload    Json
+  status     String    @default("pending_approval") // pending_approval | approved | executed | rejected
+  approvedBy String?
+  createdAt  DateTime  @default(now())
+  executedAt DateTime?
+}
+
+model RevenueSnapshot {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  data      Json
+  createdAt DateTime @default(now())
+}
+
+model ContentPack {
+  id        String   @id @default(cuid())
+  subjectId String?
+  data      Json
+  status    String   @default("processing")
+  createdAt DateTime @default(now())
+}
+
+model SocialAccount {
+  id             String           @id @default(cuid())
+  brandProfileId String
+  brandProfile   BrandProfile     @relation(fields: [brandProfileId], references: [id])
+  platform       String // instagram | tiktok
+  accountId      String
+  handle         String?
+  tokenRef       String // referensi secret; JANGAN simpan token plain
+  connectedAt    DateTime         @default(now())
+  snapshots      SocialSnapshot[]
+
+  @@unique([brandProfileId, platform, accountId])
+}
+
+model SocialSnapshot {
+  id              String        @id @default(cuid())
+  socialAccountId String
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id])
+  date            DateTime      @db.Date
+  metrics         Json // { followers, reach, impressions, engagement_rate, profile_visits }
+  topPosts        Json?
+  createdAt       DateTime      @default(now())
+
+  @@unique([socialAccountId, date])
+}

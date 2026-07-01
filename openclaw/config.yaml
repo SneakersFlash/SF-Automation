@@ -1,0 +1,18 @@
+# SNKRS Console — OpenClaw Gateway config (MASTER-BRIEF §7)
+# Di-mount ke container Gateway via docker-compose: ./openclaw:/config
+# Gateway berjalan di network internal `back`, TANPA publish port.
+# Endpoint OpenAI-compatible (chatCompletions) diakses HANYA dari NestJS via bearer.
+#
+# CATATAN: struktur field di bawah placeholder — verifikasi sesuai versi OpenClaw Owner.
+
+gateway:
+  http:
+    # bind private network saja
+    host: 0.0.0.0
+    port: 18789
+    endpoints:
+      chatCompletions: /v1/chat/completions
+
+# Skills generatif ada di ./skills/<name>/SKILL.md (diisi Fase 3)
+skills:
+  dir: ./skills
