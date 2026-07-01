@@ -93,3 +93,16 @@ Setiap respon yang mengubah kode/file **WAJIB** sertakan tabel **Requirement Log
 - Auth: login only (no registrasi/MFA); akun dibuat manual oleh Owner.
 - Notifikasi: in-app only (no WA/Telegram).
 - Out of scope: auto-publish, multi-tenant penuh, light mode.
+
+---
+
+## 🏗️ Status Build
+
+| Fase | Status | Catatan |
+|------|--------|---------|
+| **0** Validasi SOT | ✅ done | 4 SOT lengkap, tanpa Hard Block |
+| **1** Scaffolding | ✅ done | Monorepo api/web/openclaw/docker + config + entry point. Prisma schema 10 model. Module NestJS masih shell kosong (belum ada logika bisnis) |
+| **2** Layout & Nav | ⏳ next | Shell rail/topbar, routing, halaman skeleton (acuan IA) |
+| **3** Detailed | ⬜ todo | Komponen + logika + feedback (acuan UF + DS) |
+
+**Belum dikerjakan (nunggu Fase lanjut / input Owner):** implementasi tiap module, UI, DS tokens, credentials (OpenClaw/Ginee/Meta/TikTok), `npm install` + build nyata.
