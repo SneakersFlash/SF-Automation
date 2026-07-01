@@ -1,3 +1,39 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Design tokens — DS §11.1 */
+:root {
+  --ink-900: #14110b;
+  --ink-800: #1e1a12;
+  --ink-700: #2a241a;
+  --line: #3a3122;
+  --paper: #f3ecdd;
+  --paper-dim: #b4a88c;
+  --paper-faint: #796e58;
+  --flash: #ff5a1f;
+  --flash-soft: rgba(255, 90, 31, 0.14);
+  --up: #6fcf97;
+  --down: #ff6b6b;
+  --watch: #e0b341;
+  --info: #7cb3ff;
+  --radius-input: 10px;
+  --radius-chip: 10px;
+  --radius-card: 14px;
+  --border: 1px solid var(--line);
+  --shadow-card: 0 1px 0 rgba(0, 0, 0, 0.4);
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--ink-900);
+  color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}

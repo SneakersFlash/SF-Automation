@@ -1,5 +1,6 @@
-// Fase 1: placeholder entry route. Shell (rail/topbar) & halaman skeleton
-// dibangun di Fase 2 sesuai Information Architecture.
-export default function HomePage() {
-  return <main>SNKRS Console — scaffolding OK</main>;
+import { redirect } from 'next/navigation';
+
+// Entry: arahkan ke halaman kerja utama (IA §5.2). Auth-guard diwire di Fase 3.
+export default function Home() {
+  redirect('/creative/brief');
 }

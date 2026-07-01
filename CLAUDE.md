@@ -102,7 +102,7 @@ Setiap respon yang mengubah kode/file **WAJIB** sertakan tabel **Requirement Log
 |------|--------|---------|
 | **0** Validasi SOT | ✅ done | 4 SOT lengkap, tanpa Hard Block |
 | **1** Scaffolding | ✅ done | Monorepo api/web/openclaw/docker + config + entry point. Prisma schema 10 model. Module NestJS masih shell kosong (belum ada logika bisnis) |
-| **2** Layout & Nav | ⏳ next | Shell rail/topbar, routing, halaman skeleton (acuan IA) |
-| **3** Detailed | ⬜ todo | Komponen + logika + feedback (acuan UF + DS) |
+| **2** Layout & Nav | ✅ done | Shell rail+topbar, 11 rute App Router (route group `(app)`), skeleton semua halaman, nav per-peran (`lib/nav.ts`), token DS dasar (warna/font/radius). Login skeleton statis. Belum ada logika/API |
+| **3** Detailed | ⏳ next | Komponen detail + logika + feedback tiap aksi (acuan UF + DS) |
 
-**Belum dikerjakan (nunggu Fase lanjut / input Owner):** implementasi tiap module, UI, DS tokens, credentials (OpenClaw/Ginee/Meta/TikTok), `npm install` + build nyata.
+**Belum dikerjakan (nunggu Fase 3 / input Owner):** logika tiap module, panggil API, form fungsional, auth asli (role masih placeholder `lib/session.ts`), komponen detail DS (Spec Tag dll), credentials (OpenClaw/Ginee/Meta/TikTok), `npm install` + build nyata.
