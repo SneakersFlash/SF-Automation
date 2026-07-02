@@ -3,10 +3,13 @@ services:
     build:
       context: .
       dockerfile: docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     env_file: .env
     depends_on: [api]
     networks: [front]
     ports: ["3000:3000"] # taruh di belakang reverse proxy (tool internal)
+    restart: unless-stopped
 
   api:
     build:
@@ -15,6 +18,7 @@ services:
     env_file: .env
     depends_on: [postgres, redis]
     networks: [front, back]
+    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
@@ -24,16 +28,19 @@ services:
       POSTGRES_DB: console
     volumes: [pgdata:/var/lib/postgresql/data]
     networks: [back]
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     networks: [back]
+    restart: unless-stopped
 
   openclaw:
     image: openclaw/gateway:latest # sesuaikan image/build OpenClaw
     env_file: .env
     volumes: ["./openclaw:/config"]
     networks: [back] # INTERNAL only, TANPA ports:
+    restart: unless-stopped
 
 networks:
   front: {}

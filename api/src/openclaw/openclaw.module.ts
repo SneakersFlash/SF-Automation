@@ -1,6 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { OpenclawService } from './openclaw.service';
 
-// Modul OpenClaw Gateway client (MASTER-BRIEF §7). Skill generatif dipanggil via Gateway.
-// Scaffolding-only — client & config di fase berikut.
-@Module({})
+// Global agar creative/ads bisa inject tanpa re-import (gerbang generatif).
+@Global()
+@Module({
+  providers: [OpenclawService],
+  exports: [OpenclawService],
+})
 export class OpenclawModule {}

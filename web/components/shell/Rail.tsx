@@ -3,11 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV } from '@/lib/nav';
-import { currentUser } from '@/lib/session';
+import { useAuth } from '@/lib/auth';
 
 // Left rail persisten (IA §11, DS §8.1 & §12.8). Item difilter per peran.
 export function Rail() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  if (!user) return null; // sesi belum terhidrasi
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-ink-900 md:flex">
@@ -19,7 +21,7 @@ export function Rail() {
 
       <nav className="flex-1 space-y-6 px-2 pb-6" aria-label="Navigasi utama">
         {NAV.map((group) => {
-          const items = group.items.filter((i) => i.roles.includes(currentUser.role));
+          const items = group.items.filter((i) => i.roles.includes(user.role));
           if (items.length === 0) return null;
           return (
             <div key={group.section}>

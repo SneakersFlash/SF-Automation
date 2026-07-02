@@ -4,12 +4,15 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { ChevronDown, UserCircle } from 'lucide-react';
 import { BRAND_SWITCHER_ROUTES } from '@/lib/nav';
-import { currentUser } from '@/lib/session';
+import { useAuth } from '@/lib/auth';
+import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 
 // Top bar global (IA §2.2, §11.1). Brand switcher hanya di CREATIVE & Social.
 export function Topbar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
   const showBrand = BRAND_SWITCHER_ROUTES.some((r) => pathname.startsWith(r));
 
   return (
@@ -41,19 +44,27 @@ export function Topbar() {
           aria-expanded={menuOpen}
         >
           <UserCircle size={20} aria-hidden />
-          <span>{currentUser.name}</span>
+          <span>{user?.name ?? user?.email ?? '—'}</span>
           <ChevronDown size={16} aria-hidden />
         </button>
         {menuOpen && (
           <div className="absolute right-0 mt-2 w-44 rounded-card border border-line bg-ink-800 py-1 text-sm shadow-card">
             <button
               type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setPwOpen(true);
+              }}
               className="block w-full px-3 py-2 text-left text-paper-dim hover:bg-ink-700 hover:text-paper"
             >
               Ganti Password
             </button>
             <button
               type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                void logout();
+              }}
               className="block w-full px-3 py-2 text-left text-paper-dim hover:bg-ink-700 hover:text-paper"
             >
               Logout
@@ -61,6 +72,8 @@ export function Topbar() {
           </div>
         )}
       </div>
+
+      {pwOpen && <ChangePasswordModal onClose={() => setPwOpen(false)} />}
     </header>
   );
 }

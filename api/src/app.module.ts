@@ -12,6 +12,7 @@ import { SocialModule } from './social/social.module';
 import { RevenueModule } from './revenue/revenue.module';
 import { AuditModule } from './audit/audit.module';
 import { OpenclawModule } from './openclaw/openclaw.module';
+import { OrchestratorModule } from './orchestrator/orchestrator.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OpenclawModule } from './openclaw/openclaw.module';
     RevenueModule,
     AuditModule,
     OpenclawModule,
+    OrchestratorModule,
   ],
 })
 export class AppModule {}

@@ -1,5 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
 
-// Modul Autentikasi (SRS §7.1 AUTH-01..04). Scaffolding-only — implementasi di fase berikut.
-@Module({})
+// Modul Autentikasi (SRS §7.1 AUTH-01..04, §19). Sesi JWT expiry 8 jam.
+@Module({
+  imports: [
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET') ?? 'dev-secret-change-me',
+        signOptions: { expiresIn: '8h' },
+      }),
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtAuthGuard, RolesGuard],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard],
+})
 export class AuthModule {}

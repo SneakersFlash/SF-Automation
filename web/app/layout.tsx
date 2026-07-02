@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Archivo, Inter, JetBrains_Mono } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth';
 import './globals.css';
 
 const archivo = Archivo({
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" className={`${archivo.variable} ${inter.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-ink-900 font-sans text-paper antialiased">{children}</body>
+      <body className="min-h-screen bg-ink-900 font-sans text-paper antialiased">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

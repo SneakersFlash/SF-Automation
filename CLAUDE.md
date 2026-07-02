@@ -103,6 +103,10 @@ Setiap respon yang mengubah kode/file **WAJIB** sertakan tabel **Requirement Log
 | **0** Validasi SOT | ✅ done | 4 SOT lengkap, tanpa Hard Block |
 | **1** Scaffolding | ✅ done | Monorepo api/web/openclaw/docker + config + entry point. Prisma schema 10 model. Module NestJS masih shell kosong (belum ada logika bisnis) |
 | **2** Layout & Nav | ✅ done | Shell rail+topbar, 11 rute App Router (route group `(app)`), skeleton semua halaman, nav per-peran (`lib/nav.ts`), token DS dasar (warna/font/radius). Login skeleton statis. Belum ada logika/API |
-| **3** Detailed | ⏳ next | Komponen detail + logika + feedback tiap aksi (acuan UF + DS) |
+| **3** Detailed | ✅ code done | Semua 6 slice ditulis: Auth, Users, Brand/Subject, Creative (OpenClaw), Ads+Revenue (Ginee), Social+Orchestrator (BullMQ). Backend module lengkap (controller/service/DTO/guard). Frontend 10 halaman fungsional + primitives DS. **Build Docker api & web lolos** (`docker compose build`). |
 
-**Belum dikerjakan (nunggu Fase 3 / input Owner):** logika tiap module, panggil API, form fungsional, auth asli (role masih placeholder `lib/session.ts`), komponen detail DS (Spec Tag dll), credentials (OpenClaw/Ginee/Meta/TikTok), `npm install` + build nyata.
+**Catatan Fase 3:**
+- Validasi build lewat **Docker saja** (`docker compose build`) — JANGAN `npm install`/build di host. Lihat memory `no-local-builds-use-docker`.
+- Slice 4–6 butuh **credentials Owner** untuk jalan runtime: OpenClaw (`OPENCLAW_*`), Ginee (`GINEE_*`), Meta/TikTok. Kode sudah siap; tanpa creds endpoint balik error jelas.
+- DB: belum ada `prisma/migrations` → container api pakai `prisma db push` + `prisma db seed` saat start (ganti ke `migrate deploy` saat migration resmi dibuat).
+- Deploy: taruh `web` di belakang reverse proxy (lihat pola `sneakersflash-store`). Belum di-deploy.
