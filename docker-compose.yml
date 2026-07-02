@@ -5,23 +5,27 @@ services:
       dockerfile: docker/web.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: sf_console_web
     env_file: .env
     depends_on: [api]
-    networks: [front]
-    ports: ["3000:3000"] # taruh di belakang reverse proxy (tool internal)
+    networks: [dmz]
     restart: unless-stopped
 
   api:
     build:
       context: .
       dockerfile: docker/api.Dockerfile
+    container_name: sf_console_api
     env_file: .env
     depends_on: [postgres, redis]
-    networks: [front, back]
+    networks: [dmz, back]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
+    container_name: sf_console_db
     environment:
       POSTGRES_USER: console
       POSTGRES_PASSWORD: pass
@@ -32,19 +36,24 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: sf_console_redis
     networks: [back]
     restart: unless-stopped
 
   openclaw:
-    image: openclaw/gateway:latest # sesuaikan image/build OpenClaw
+    image: openclaw/gateway:latest
+    container_name: sf_console_openclaw
     env_file: .env
     volumes: ["./openclaw:/config"]
-    networks: [back] # INTERNAL only, TANPA ports:
+    networks: [back]
     restart: unless-stopped
 
 networks:
-  front: {}
-  back: { internal: true }
+  dmz:
+    external: true
+    name: sneakersflash_sneakers_dmz
+  back:
+    internal: true
 
 volumes:
   pgdata: {}

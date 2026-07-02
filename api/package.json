@@ -2,9 +2,9 @@
   "name": "snkrs-console-api",
   "version": "0.1.0",
   "private": true,
-  "description": "SNKRS Console — NestJS backend (owns Prisma)",
+  "description": "SNKRS Console \u2014 NestJS backend (owns Prisma)",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node prisma/seed.js"
   },
   "scripts": {
     "build": "nest build",

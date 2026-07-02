@@ -1,6 +1,15 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+// Peta skill -> agent OpenClaw khusus per module (jawaban terfokus).
+// Routing lewat header x-openclaw-session-key: "agent:<agentId>:<suffix>".
+export const SKILL_AGENT: Record<string, string> = {
+  'content-brief': 'sf-content-brief',
+  copywriting: 'sf-copywriting',
+  humanize: 'sf-humanize',
+  'ads-generate': 'sf-ads',
+};
+
 // Gerbang tunggal ke OpenClaw Gateway (Golden Rule #1: skill = SKILL.md di
 // OpenClaw, JANGAN hardcode prompt skill di backend). Backend hanya mengirim
 // pemicu tipis + payload lalu memaksa output JSON. Endpoint OpenAI-compatible.
@@ -17,7 +26,8 @@ export class OpenclawService {
     return this.config.get<string>('OPENCLAW_TOKEN');
   }
   private get model(): string {
-    return this.config.get<string>('OPENCLAW_AGENT_MODEL') ?? 'default';
+    // Endpoint OpenClaw hanya terima "openclaw" atau "openclaw/<agentId>".
+    return this.config.get<string>('OPENCLAW_AGENT_MODEL') ?? 'openclaw';
   }
 
   // Jalankan skill generatif, kembalikan output ter-parse (JSON) bertipe T.
@@ -28,9 +38,10 @@ export class OpenclawService {
       `sesuai kontrak skill (tanpa markdown fences, tanpa penjelasan):\n` +
       `${JSON.stringify(payload)}`;
 
+    const agentId = SKILL_AGENT[skill];
     let lastErr: unknown;
     for (let attempt = 1; attempt <= 2; attempt++) {
-      const content = await this.chat(trigger);
+      const content = await this.chat(trigger, { agentId });
       try {
         return this.parseJson<T>(content);
       } catch (e) {
@@ -44,7 +55,12 @@ export class OpenclawService {
   }
 
   // Panggil mentah endpoint chat (dipakai skill teks bebas seperti humanize).
-  async chat(content: string, timeoutMs = 30000): Promise<string> {
+  // agentId opsional → route ke agent module tertentu (jawaban terfokus).
+  async chat(
+    content: string,
+    opts: { timeoutMs?: number; agentId?: string } = {},
+  ): Promise<string> {
+    const { timeoutMs = 60000, agentId } = opts;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     const started = Date.now();
@@ -55,9 +71,13 @@ export class OpenclawService {
         headers: {
           'Content-Type': 'application/json',
           ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          ...(agentId
+            ? { 'x-openclaw-session-key': `agent:${agentId}:console` }
+            : {}),
         },
         body: JSON.stringify({
-          model: this.model,
+          // Route ke agent module via model "openclaw/<agentId>" (Golden Rule #1).
+          model: agentId ? `openclaw/${agentId}` : this.model,
           messages: [{ role: 'user', content }],
         }),
       });

@@ -34,6 +34,7 @@ export class CreativeService {
   async humanize(dto: HumanizeDto, userId: string) {
     const text = await this.openclaw.chat(
       `Jalankan skill "humanize" pada teks berikut, balas teks natural saja:\n${dto.text}`,
+      { agentId: 'sf-humanize' },
     );
     const output = { text: text.trim() };
     await this.logGeneration('humanize', dto, output, userId, dto.brandProfileId);

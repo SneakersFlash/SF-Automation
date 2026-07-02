@@ -1,6 +1,7 @@
 // SNKRS Console — Prisma schema (SOT: SRS §13-17, MASTER-BRIEF §6)
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

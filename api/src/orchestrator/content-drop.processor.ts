@@ -48,6 +48,7 @@ export class ContentDropProcessor extends WorkerHost {
       });
       const humanized = await this.openclaw.chat(
         `Jalankan skill "humanize" pada teks berikut, balas teks natural saja:\n${JSON.stringify(copy)}`,
+        { agentId: 'sf-humanize' },
       );
       const ads = await this.openclaw.run<unknown[]>('ads-generate', {
         subject: subjectPayload,
