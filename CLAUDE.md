@@ -82,8 +82,8 @@ Setiap respon yang mengubah kode/file **WAJIB** sertakan tabel **Requirement Log
 
 ## 🙋 Butuh input Owner (belum bisa dari dokumen)
 
-- **OpenClaw**: cara jalanin Gateway + `OPENCLAW_GATEWAY_URL`, `OPENCLAW_TOKEN`, `OPENCLAW_AGENT_MODEL`, verifikasi key config `chatCompletions`.
-- **Credentials**: Ginee (access/secret key), Meta (IG Graph + Marketing), TikTok (Business).
+- ✅ **OpenClaw** — SUDAH tersambung (gateway host port 18789, 4 agent per-module, backend OpenAI/Codex GPT‑5.5). Lihat `## 🤖 OpenClaw` di bawah.
+- **Credentials (belum)**: Ginee (access/secret key) → Revenue; Meta (IG Graph + Marketing) & TikTok (Business) → Social + Ads write. Kode siap, tinggal isi `.env`.
 - Auth & roles **sudah** diputusin: login simpel (akun manual), Owner + Member.
 
 ---
@@ -103,10 +103,20 @@ Setiap respon yang mengubah kode/file **WAJIB** sertakan tabel **Requirement Log
 | **0** Validasi SOT | ✅ done | 4 SOT lengkap, tanpa Hard Block |
 | **1** Scaffolding | ✅ done | Monorepo api/web/openclaw/docker + config + entry point. Prisma schema 10 model. Module NestJS masih shell kosong (belum ada logika bisnis) |
 | **2** Layout & Nav | ✅ done | Shell rail+topbar, 11 rute App Router (route group `(app)`), skeleton semua halaman, nav per-peran (`lib/nav.ts`), token DS dasar (warna/font/radius). Login skeleton statis. Belum ada logika/API |
-| **3** Detailed | ✅ code done | Semua 6 slice ditulis: Auth, Users, Brand/Subject, Creative (OpenClaw), Ads+Revenue (Ginee), Social+Orchestrator (BullMQ). Backend module lengkap (controller/service/DTO/guard). Frontend 10 halaman fungsional + primitives DS. **Build Docker api & web lolos** (`docker compose build`). |
+| **3** Detailed | ✅ done + **DEPLOYED** | Semua 6 slice: Auth, Users, Brand/Subject, Creative, Ads+Revenue, Social+Orchestrator. Backend lengkap + frontend 10 halaman fungsional. **Live** di `ai.sneakersflash.com` (web) / `ai-api.sneakersflash.com` (api). OpenClaw tersambung (Creative & Ads jalan). Revenue/Social nunggu creds. |
 
 **Catatan Fase 3:**
 - Validasi build lewat **Docker saja** (`docker compose build`) — JANGAN `npm install`/build di host. Lihat memory `no-local-builds-use-docker`.
-- Slice 4–6 butuh **credentials Owner** untuk jalan runtime: OpenClaw (`OPENCLAW_*`), Ginee (`GINEE_*`), Meta/TikTok. Kode sudah siap; tanpa creds endpoint balik error jelas.
-- DB: belum ada `prisma/migrations` → container api pakai `prisma db push` + `prisma db seed` saat start (ganti ke `migrate deploy` saat migration resmi dibuat).
-- Deploy: taruh `web` di belakang reverse proxy (lihat pola `sneakersflash-store`). Belum di-deploy.
+- **Deployed**: 5 container (`sf_console_web/api/db/redis`, openclaw belum dipakai—pakai gateway host), di belakang nginx commerce (`sneakers_nginx_prod`) + SSL Let's Encrypt. Detail: memory `deployment-setup`.
+- Owner login awal: `owner@sneakersflash.com` / `ChangeMe123!` (+ `sneakersflash23@gmail.com`). Ganti setelah login.
+- DB: belum ada `prisma/migrations` → container api pakai `prisma db push` + seed saat start (ganti ke `migrate deploy` saat migration resmi dibuat).
+- **Belum jalan (nunggu creds)**: Revenue (Ginee `GINEE_*`), Social (Meta/TikTok).
+
+---
+
+## 🤖 OpenClaw (tersambung)
+
+- Gateway jalan di **host** (`port 18789`, v2026.5.18), backend model **OpenAI/Codex GPT‑5.5** (OAuth). Console akses via `http://host.docker.internal:18789/v1/chat/completions` (`extra_hosts` di compose), auth Bearer token.
+- **4 agent per-module** (`agents.list` di `openclaw.json`): `sf-content-brief`, `sf-copywriting`, `sf-humanize`, `sf-ads` — tiap agent punya workspace + `SKILL.md` + knowledge. Skill mirror di repo: `openclaw/skills/*/SKILL.md`.
+- **Routing**: field `model = openclaw/<agentId>` (bukan header). Model lain → HTTP 400.
+- Nambah/ubah agent: lihat memory `openclaw-agents` (WAJIB backup `openclaw.json` + validate + cek agent lain sebelum restart gateway).
