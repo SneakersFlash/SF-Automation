@@ -28,6 +28,8 @@ export class CreateBrandProfileDto {
   @IsOptional() @IsString() usp?: string;
   @IsOptional() @IsString() ctaDestinations?: string;
   @IsOptional() @IsString() constraints?: string;
+  @IsOptional() @IsString() knowledge?: string;
+  @IsOptional() @IsString() examples?: string;
   @IsOptional() @IsBoolean() isDefault?: boolean;
 }
 
@@ -50,5 +52,7 @@ export class UpdateBrandProfileDto {
   @IsOptional() @IsString() usp?: string;
   @IsOptional() @IsString() ctaDestinations?: string;
   @IsOptional() @IsString() constraints?: string;
+  @IsOptional() @IsString() knowledge?: string;
+  @IsOptional() @IsString() examples?: string;
   @IsOptional() @IsBoolean() isDefault?: boolean;
 }

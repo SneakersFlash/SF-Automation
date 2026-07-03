@@ -34,6 +34,8 @@ model BrandProfile {
   usp             String?
   ctaDestinations String?
   constraints     String?
+  knowledge       String? // brand knowledge bebas (user-input via web) → dikirim ke LLM
+  examples        String? // few-shot contoh konten on-brand (user-input via web)
   isDefault       Boolean         @default(false)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt

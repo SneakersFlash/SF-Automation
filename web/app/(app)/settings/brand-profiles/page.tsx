@@ -20,6 +20,8 @@ interface BrandProfile {
   brandName: string;
   audience: string | null;
   voiceAdjectives: string | null;
+  knowledge: string | null;
+  examples: string | null;
   platforms: string[];
   isDefault: boolean;
 }
@@ -31,19 +33,23 @@ export default function BrandProfilesPage() {
   const [brandName, setBrandName] = useState('');
   const [audience, setAudience] = useState('');
   const [voice, setVoice] = useState('');
+  const [knowledge, setKnowledge] = useState('');
+  const [examples, setExamples] = useState('');
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
     const ok = await run(() =>
       api('/brand-profiles', {
         method: 'POST',
-        body: { brandName, audience, voiceAdjectives: voice },
+        body: { brandName, audience, voiceAdjectives: voice, knowledge, examples },
       }),
     );
     if (ok) {
       setBrandName('');
       setAudience('');
       setVoice('');
+      setKnowledge('');
+      setExamples('');
       reload();
     }
   }
@@ -75,6 +81,20 @@ export default function BrandProfilesPage() {
           <Field label="Voice (adjectives)">
             <Textarea value={voice} onChange={(e) => setVoice(e.target.value)} placeholder="mis. hype, informal, to the point" />
           </Field>
+          <Field label="Brand Knowledge">
+            <Textarea
+              value={knowledge}
+              onChange={(e) => setKnowledge(e.target.value)}
+              placeholder="Fakta/aturan brand yang dipakai AI: jadwal drop, cara nyebut produk, hal yang dihindari, CTA…"
+            />
+          </Field>
+          <Field label="Contoh Konten (few-shot)">
+            <Textarea
+              value={examples}
+              onChange={(e) => setExamples(e.target.value)}
+              placeholder="Tempel 2-3 caption/brief asli yang kamu suka sebagai contoh gaya. AI bakal niru nadanya."
+            />
+          </Field>
           <Button type="submit" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan Profile'}</Button>
         </form>
         {actErr && <div className="mt-3"><Alert kind="error">{actErr}</Alert></div>}
@@ -96,6 +116,9 @@ export default function BrandProfilesPage() {
               </div>
               <p className="text-sm text-paper-dim">{bp.audience ?? 'Audience belum diisi'}</p>
               <p className="mt-1 text-xs text-paper-faint">{bp.voiceAdjectives ?? '—'}</p>
+              <p className="mt-1 text-xs text-paper-faint">
+                Knowledge: {bp.knowledge ? '✓ terisi' : '—'} · Contoh: {bp.examples ? '✓ terisi' : '—'}
+              </p>
               <div className="mt-4 flex gap-2">
                 {!bp.isDefault && (
                   <Button variant="ghost" className="text-xs" onClick={() => setDefault(bp.id)}>
@@ -108,10 +131,70 @@ export default function BrandProfilesPage() {
                   </Button>
                 )}
               </div>
+              <KnowledgeEditor bp={bp} onSaved={reload} />
             </Card>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Editor inline untuk knowledge + examples pada profil yang sudah ada (PATCH).
+// Knowledge ini yang disuntik backend ke OpenClaw supaya output tidak generik.
+function KnowledgeEditor({ bp, onSaved }: { bp: BrandProfile; onSaved: () => void }) {
+  const { busy, error, run } = useAction();
+  const [open, setOpen] = useState(false);
+  const [knowledge, setKnowledge] = useState(bp.knowledge ?? '');
+  const [examples, setExamples] = useState(bp.examples ?? '');
+
+  async function save() {
+    const ok = await run(() =>
+      api(`/brand-profiles/${bp.id}`, { method: 'PATCH', body: { knowledge, examples } }),
+    );
+    if (ok) {
+      setOpen(false);
+      onSaved();
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-3 text-xs text-flash underline-offset-2 hover:underline"
+      >
+        Edit knowledge & contoh
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-paper-faint/20 pt-3">
+      <Field label="Brand Knowledge">
+        <Textarea
+          value={knowledge}
+          onChange={(e) => setKnowledge(e.target.value)}
+          placeholder="Fakta/aturan brand: jadwal drop, cara nyebut produk, hal yang dihindari…"
+        />
+      </Field>
+      <Field label="Contoh Konten (few-shot)">
+        <Textarea
+          value={examples}
+          onChange={(e) => setExamples(e.target.value)}
+          placeholder="2-3 caption/brief asli yang kamu suka sebagai contoh gaya."
+        />
+      </Field>
+      {error && <Alert kind="error">{error}</Alert>}
+      <div className="flex gap-2">
+        <Button className="text-xs" disabled={busy} onClick={save}>
+          {busy ? 'Menyimpan…' : 'Simpan'}
+        </Button>
+        <Button variant="ghost" className="text-xs" onClick={() => setOpen(false)}>
+          Batal
+        </Button>
+      </div>
     </div>
   );
 }
