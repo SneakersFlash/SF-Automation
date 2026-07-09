@@ -2,7 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenclawService } from '../openclaw/openclaw.service';
-import type { ContentBriefDto, CopywritingDto, HumanizeDto } from './dto/creative.dto';
+import type {
+  ContentBriefDto,
+  ContentItemDto,
+  CopywritingDto,
+  HumanizeDto,
+} from './dto/creative.dto';
 
 // Konteks brand ringkas yang dikirim ke OpenClaw supaya output on-brand,
 // bukan template generik. Diturunkan dari BrandProfile di DB (bukan hardcode).
@@ -20,6 +25,13 @@ type BrandContext = {
   examples?: string;
 };
 
+// Hasil generate satu item (unified: visual pakai assets+copy, teks pakai brief).
+type GenResult = Record<string, unknown> & {
+  kind?: string;
+  brief?: unknown;
+  copy?: Record<string, unknown>;
+};
+
 // CRE-01..03 — panggil skill via OpenClaw Gateway, catat Generation (AUD-01).
 @Injectable()
 export class CreativeService {
@@ -30,16 +42,53 @@ export class CreativeService {
     private readonly openclaw: OpenclawService,
   ) {}
 
+  // CRE-01 — Content Builder: tiap item digenerate independen (paralel).
   async contentBrief(dto: ContentBriefDto, userId: string) {
     const brand = await this.loadBrandContext(dto.brandProfileId);
-    const payload = { brand, subject: dto.subject, formats: dto.formats };
-    const raw = await this.openclaw.run<{ briefs: Record<string, string> }>(
-      'content-brief',
-      payload,
+    const results = await Promise.all(
+      dto.items.map((item) => this.generateItem(brand, item)),
     );
-    const output = await this.humanizeBriefs(raw, brand);
-    await this.logGeneration('content-brief', payload, output, userId, dto.brandProfileId);
-    return output;
+    await this.logGeneration(
+      'content-brief',
+      { brand, items: dto.items },
+      { results },
+      userId,
+      dto.brandProfileId,
+    );
+    return { results };
+  }
+
+  private async generateItem(
+    brand: BrandContext | undefined,
+    item: ContentItemDto,
+  ): Promise<GenResult> {
+    const raw = await this.openclaw.run<GenResult>('content-brief', { brand, item });
+    return this.humanizeResult(raw, brand);
+  }
+
+  // Humanize hanya field prosa: brief (teks) atau copy.caption (visual).
+  // image_prompt/negative_prompt JANGAN disentuh.
+  private async humanizeResult(
+    result: GenResult,
+    brand?: BrandContext,
+  ): Promise<GenResult> {
+    if (!result || typeof result !== 'object') return result;
+
+    if (result.kind === 'text' && typeof result.brief === 'string') {
+      return {
+        ...result,
+        brief: await this.softHumanize(result.brief, brand, { preserveStructure: true }),
+      };
+    }
+
+    const copy = result.copy;
+    if (copy && typeof copy === 'object' && typeof copy.caption === 'string') {
+      return {
+        ...result,
+        copy: { ...copy, caption: await this.softHumanize(copy.caption, brand) },
+      };
+    }
+    return result;
   }
 
   async copywriting(dto: CopywritingDto, userId: string) {
@@ -112,22 +161,6 @@ export class CreativeService {
     }
   }
 
-  // Perhalus tiap brief per-format (paralel), pertahankan struktur label.
-  private async humanizeBriefs(
-    output: { briefs: Record<string, string> },
-    brand?: BrandContext,
-  ): Promise<{ briefs: Record<string, string> }> {
-    if (!output?.briefs) return output;
-    const entries = Object.entries(output.briefs);
-    const humanized = await Promise.all(
-      entries.map(
-        async ([fmt, text]) =>
-          [fmt, await this.softHumanize(text, brand, { preserveStructure: true })] as const,
-      ),
-    );
-    return { ...output, briefs: Object.fromEntries(humanized) };
-  }
-
   // Copywriting: perhalus caption (blok prosa paling rawan robotik).
   private async humanizeCopy(
     output: Record<string, unknown>,
@@ -137,22 +170,27 @@ export class CreativeService {
     return { ...output, caption: await this.softHumanize(output.caption, brand) };
   }
 
-  private logGeneration(
+  private async logGeneration(
     skill: string,
     input: unknown,
     output: unknown,
     userId: string,
     brandProfileId?: string,
   ) {
-    return this.prisma.generation.create({
-      data: {
-        skill,
-        brandProfileId,
-        userId,
-        input: input as Prisma.InputJsonValue,
-        output: output as Prisma.InputJsonValue,
-        status: 'done',
-      },
-    });
+    const base = {
+      skill,
+      userId,
+      input: input as Prisma.InputJsonValue,
+      output: output as Prisma.InputJsonValue,
+      status: 'done',
+    };
+    try {
+      return await this.prisma.generation.create({ data: { ...base, brandProfileId } });
+    } catch (e) {
+      // brandProfileId basi/terhapus → FK violation. Jangan gagalkan request user;
+      // simpan audit tanpa link brand.
+      this.log.warn(`Log generation gagal (retry tanpa brandProfileId): ${String(e)}`);
+      return this.prisma.generation.create({ data: base });
+    }
   }
 }

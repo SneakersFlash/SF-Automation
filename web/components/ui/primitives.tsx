@@ -97,6 +97,17 @@ export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea className={`${inputCls} min-h-[100px] resize-y`} {...props} />;
 }
 
+export function Select({
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select className={inputCls} {...props}>
+      {children}
+    </select>
+  );
+}
+
 export function Alert({ kind, children }: { kind: 'error' | 'success' | 'info'; children: React.ReactNode }) {
   const map = {
     error: 'border-down/40 bg-down/10 text-down',

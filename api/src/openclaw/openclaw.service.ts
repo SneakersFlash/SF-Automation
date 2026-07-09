@@ -1,5 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 
 // Peta skill -> agent OpenClaw khusus per module (jawaban terfokus).
 // Routing lewat header x-openclaw-session-key: "agent:<agentId>:<suffix>".
@@ -71,8 +72,11 @@ export class OpenclawService {
         headers: {
           'Content-Type': 'application/json',
           ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          // Session key UNIK per call → skill call stateless: tiap generate
+          // fresh, selalu baca SKILL.md terbaru, tak terkontaminasi history
+          // panggilan sebelumnya (dan aman untuk request paralel).
           ...(agentId
-            ? { 'x-openclaw-session-key': `agent:${agentId}:console` }
+            ? { 'x-openclaw-session-key': `agent:${agentId}:${randomUUID()}` }
             : {}),
         },
         body: JSON.stringify({

@@ -38,11 +38,27 @@ export class ContentDropProcessor extends WorkerHost {
       details: subject.details,
     };
 
+    // Kontrak content-brief v2: satu item per call. Susun item dari subject.
+    const baseItem = {
+      productName: subject.name,
+      description:
+        subject.details != null ? JSON.stringify(subject.details) : '',
+      goal: subject.goal ?? '',
+      message: '',
+      cta: '',
+      visualStyle: '',
+    };
+
     try {
-      const brief = await this.openclaw.run<{ briefs: Record<string, string> }>(
-        'content-brief',
-        { subject: subjectPayload, formats: ['carousel', 'story', 'static_ad'] },
-      );
+      const [briefStory, briefCarousel] = await Promise.all([
+        this.openclaw.run<Record<string, unknown>>('content-brief', {
+          item: { ...baseItem, contentType: 'story' },
+        }),
+        this.openclaw.run<Record<string, unknown>>('content-brief', {
+          item: { ...baseItem, contentType: 'carousel' },
+        }),
+      ]);
+      const brief = { story: briefStory, carousel: briefCarousel };
       const copy = await this.openclaw.run<Record<string, unknown>>('copywriting', {
         subject: subjectPayload,
       });
