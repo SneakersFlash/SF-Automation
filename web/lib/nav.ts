@@ -1,14 +1,23 @@
 import {
   BarChart3,
+  CircleDot,
+  Clapperboard,
   FileText,
+  Image as ImageIcon,
+  Images,
   Layers,
+  LayoutGrid,
+  Mail,
   Megaphone,
+  MessageSquare,
   PenLine,
   ScrollText,
   Share2,
   Sparkles,
+  Target,
   TrendingUp,
   Users,
+  Video,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -29,9 +38,24 @@ export interface NavGroup {
 // Struktur menu — IA §1 Sitemap, §3 Menu Structure, §9.3 ikon DS
 export const NAV: NavGroup[] = [
   {
+    // Tiap tipe konten = menu sendiri; halaman builder terkunci ke tipe itu.
+    section: 'CONTENT',
+    items: [
+      { label: 'Carousel', href: '/content/carousel', icon: Images, roles: ['owner', 'member'] },
+      { label: 'Single Image', href: '/content/image', icon: ImageIcon, roles: ['owner', 'member'] },
+      { label: 'Video Core', href: '/content/video_core', icon: Video, roles: ['owner', 'member'] },
+      { label: 'Ads', href: '/content/ads', icon: Target, roles: ['owner', 'member'] },
+      { label: '9-Feeds', href: '/content/feeds9', icon: LayoutGrid, roles: ['owner', 'member'] },
+      { label: 'Story', href: '/content/story', icon: CircleDot, roles: ['owner', 'member'] },
+      { label: 'Short Video', href: '/content/short_video', icon: Clapperboard, roles: ['owner', 'member'] },
+      { label: 'Thread', href: '/content/thread', icon: MessageSquare, roles: ['owner', 'member'] },
+      { label: 'Email', href: '/content/email', icon: Mail, roles: ['owner', 'member'] },
+      { label: 'Blog', href: '/content/blog', icon: FileText, roles: ['owner', 'member'] },
+    ],
+  },
+  {
     section: 'CREATIVE',
     items: [
-      { label: 'Content Brief', href: '/creative/brief', icon: FileText, roles: ['owner', 'member'] },
       { label: 'Copywriting', href: '/creative/copy', icon: PenLine, roles: ['owner', 'member'] },
       { label: 'Humanize', href: '/creative/humanize', icon: Sparkles, roles: ['owner', 'member'] },
     ],
@@ -59,4 +83,4 @@ export const NAV: NavGroup[] = [
 ];
 
 // Brand switcher hanya muncul di CREATIVE & Social (IA §2.3)
-export const BRAND_SWITCHER_ROUTES = ['/creative', '/insights/social'];
+export const BRAND_SWITCHER_ROUTES = ['/content', '/creative', '/insights/social'];

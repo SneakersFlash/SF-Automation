@@ -19,7 +19,7 @@ export function middleware(req: NextRequest) {
   // Sudah login tapi buka /login → ke halaman kerja utama.
   if (token && isLogin) {
     const url = req.nextUrl.clone();
-    url.pathname = '/creative/brief';
+    url.pathname = '/content/carousel';
     return NextResponse.redirect(url);
   }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-// Halaman publik Login (IA §5.1, UF-01). Sukses → redirect /creative/brief.
+// Halaman publik Login (IA §5.1, UF-01). Sukses → redirect /content/carousel.
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
@@ -20,7 +20,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email, password);
-      router.replace('/creative/brief'); // UF-01 step 5
+      router.replace('/content/carousel'); // UF-01 step 5
     } catch (err) {
       // E1 (kredensial salah) / E2 (akun nonaktif) — pesan dari backend.
       setError(err instanceof ApiError ? err.message : 'Gagal masuk. Coba lagi.');
