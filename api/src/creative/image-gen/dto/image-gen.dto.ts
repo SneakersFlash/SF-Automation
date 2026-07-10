@@ -12,7 +12,11 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 
-export const IMAGE_SIZES = ['1:1', '3:2', '2:3'] as const;
+// aspect_ratio yang diterima nano-banana-2 (terverifikasi via docs.kie.ai).
+export const IMAGE_SIZES = [
+  '1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4',
+  '8:1', '9:16', '16:9', '21:9', 'auto',
+] as const;
 
 @ValidatorConstraint({ name: 'PromptOrReference', async: false })
 class PromptOrReferenceConstraint implements ValidatorConstraintInterface {
@@ -31,7 +35,7 @@ export class GenerateImageDto {
   // size wajib (tak pernah @IsOptional) -> tempat aman menempel validator
   // cross-field PromptOrReference (validator di properti @IsOptional lain
   // akan di-skip kalau nilainya kosong, jadi tak bisa dipakai di sini).
-  @IsIn(IMAGE_SIZES, { message: 'size harus 1:1, 3:2, atau 2:3.' })
+  @IsIn(IMAGE_SIZES, { message: `size harus salah satu dari: ${IMAGE_SIZES.join(', ')}.` })
   @Validate(PromptOrReferenceConstraint)
   size!: string;
 

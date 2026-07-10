@@ -1,14 +1,16 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-// Gerbang ke kie.ai (4o Image API). Endpoint terverifikasi via docs.kie.ai:
-//   POST {baseUrl}/api/v1/gpt4o-image/generate  -> { code, data:{ taskId } }
-//   GET  {baseUrl}/api/v1/gpt4o-image/record-info?taskId=... -> lihat parseStatus()
+// Gerbang ke kie.ai (Jobs API, model nano-banana-2). Endpoint + bentuk respons
+// terverifikasi via test call langsung (bukan cuma docs) 2026-07-10:
+//   POST {baseUrl}/api/v1/jobs/createTask -> { code, data:{ taskId } }
+//   GET  {baseUrl}/api/v1/jobs/recordInfo?taskId=... -> data.state + data.resultJson
+//     (resultJson adalah JSON STRING bersarang, wajib di-parse ulang).
 // Semua task async: 200 cuma artinya task dibuat, bukan selesai.
 export interface CreateTaskInput {
   prompt?: string;
-  size: string; // '1:1' | '3:2' | '2:3'
-  filesUrl?: string[];
+  size: string; // aspect_ratio nano-banana-2: 1:1|4:5|9:16|16:9|dst, atau "auto"
+  filesUrl?: string[]; // -> input.image_input (maks 14 di kie.ai; DTO kita batasi 5)
   callBackUrl?: string;
 }
 
@@ -28,6 +30,10 @@ export class KieaiService {
     return this.config.get<string>('KIEAI_BASE_URL') ?? 'https://api.kie.ai';
   }
 
+  private get model(): string {
+    return this.config.get<string>('KIEAI_MODEL') ?? 'nano-banana-2';
+  }
+
   private get apiKey(): string {
     const key = this.config.get<string>('KIEAI_API_KEY');
     if (!key) {
@@ -45,16 +51,19 @@ export class KieaiService {
   }
 
   async createTask(input: CreateTaskInput): Promise<{ taskId: string }> {
-    const body: Record<string, unknown> = { size: input.size };
-    if (input.prompt) body.prompt = input.prompt;
-    if (input.filesUrl?.length) body.filesUrl = input.filesUrl;
+    const body: Record<string, unknown> = {
+      model: this.model,
+      input: {
+        prompt: input.prompt ?? '',
+        image_input: input.filesUrl ?? [],
+        aspect_ratio: input.size,
+        resolution: '1K',
+        output_format: 'png',
+      },
+    };
     if (input.callBackUrl) body.callBackUrl = input.callBackUrl;
 
-    const data = await this.request<{ taskId: string }>(
-      'POST',
-      '/api/v1/gpt4o-image/generate',
-      body,
-    );
+    const data = await this.request<{ taskId: string }>('POST', '/api/v1/jobs/createTask', body);
     if (!data?.taskId) {
       throw new ServiceUnavailableException('kie.ai tidak mengembalikan taskId.');
     }
@@ -63,28 +72,31 @@ export class KieaiService {
 
   async getTaskStatus(taskId: string): Promise<TaskStatus> {
     const data = await this.request<{
-      status: string;
-      response?: { resultUrls?: string[] };
-      errorMessage?: string;
-    }>('GET', `/api/v1/gpt4o-image/record-info?taskId=${encodeURIComponent(taskId)}`);
+      state: string;
+      resultJson?: string;
+      failMsg?: string;
+    }>('GET', `/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`);
 
-    return this.parseStatus(data?.status, data?.response?.resultUrls, data?.errorMessage);
+    return this.parseState(data?.state, data?.resultJson, data?.failMsg);
   }
 
-  // Kie.ai pakai vocab status berbeda antar endpoint (create/poll/webhook) --
-  // normalisasi ke satu bentuk internal { pending | done | error }.
-  private parseStatus(
-    status: string | undefined,
-    resultUrls: string[] | undefined,
-    errorMessage?: string,
-  ): TaskStatus {
-    if (status === 'SUCCESS') {
-      return { status: 'done', resultUrls: resultUrls ?? [] };
+  // state: waiting | queuing | generating | success | fail. resultJson =
+  // JSON string berisi { resultUrls: string[] } -- parse aman (kalau korup,
+  // treat sbg pending drpd melempar exception ke reconciliation job).
+  private parseState(state: string | undefined, resultJson?: string, failMsg?: string): TaskStatus {
+    if (state === 'success') {
+      let resultUrls: string[] = [];
+      try {
+        resultUrls = resultJson ? (JSON.parse(resultJson).resultUrls ?? []) : [];
+      } catch {
+        this.log.warn(`resultJson tak bisa di-parse: ${resultJson}`);
+      }
+      return { status: 'done', resultUrls };
     }
-    if (status === 'CREATE_TASK_FAILED' || status === 'GENERATE_FAILED') {
-      return { status: 'error', resultUrls: [], errorMessage: errorMessage || 'Generate gagal di kie.ai.' };
+    if (state === 'fail') {
+      return { status: 'error', resultUrls: [], errorMessage: failMsg || 'Generate gagal di kie.ai.' };
     }
-    return { status: 'pending', resultUrls: [] };
+    return { status: 'pending', resultUrls: [] }; // waiting | queuing | generating
   }
 
   private async request<T>(

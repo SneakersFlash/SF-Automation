@@ -79,18 +79,31 @@ export class ImageGenController {
     if (!expected || secret !== expected) {
       throw new UnauthorizedException('Callback secret salah.');
     }
+    // Bentuk payload Jobs API (nano-banana-2), terverifikasi via test call
+    // langsung: data.state + data.resultJson (JSON STRING bersarang).
     const payload = body as {
-      code?: number;
-      data?: { taskId?: string; info?: { result_urls?: string[] } };
+      data?: { taskId?: string; state?: string; resultJson?: string; failMsg?: string };
     };
     const taskId = payload?.data?.taskId;
     if (!taskId) return { ok: true }; // payload tak dikenal, jangan error (hindari retry storm kie.ai)
 
-    const success = payload.code === 200;
+    const state = payload.data?.state;
+    if (state === 'waiting' || state === 'queuing' || state === 'generating') {
+      return { ok: true }; // belum selesai, biarkan reconciliation job yang re-poll
+    }
+    const success = state === 'success';
+    let resultUrls: string[] = [];
+    if (success && payload.data?.resultJson) {
+      try {
+        resultUrls = JSON.parse(payload.data.resultJson).resultUrls ?? [];
+      } catch {
+        // biarkan resultUrls kosong; error di-log lewat applyResult no-op check
+      }
+    }
     await this.imageGen.applyResult(taskId, {
       status: success ? 'done' : 'error',
-      resultUrls: payload.data?.info?.result_urls ?? [],
-      errorMessage: success ? undefined : `kie.ai callback code ${payload.code}`,
+      resultUrls,
+      errorMessage: success ? undefined : payload.data?.failMsg || `kie.ai state: ${state}`,
     });
     return { ok: true };
   }

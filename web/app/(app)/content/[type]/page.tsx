@@ -71,15 +71,15 @@ function getVisualAssets(result: unknown): VisualAsset[] {
   return Array.isArray(assets) ? (assets as VisualAsset[]) : [];
 }
 
-// kie.ai cuma dukung 3 size (1:1|3:2|2:3); skill content-brief pakai aspect_ratio
-// bebas (4:5, 9:16, 16:9, dst) -- petakan ke yang rasionya paling dekat.
-function mapAspectToSize(aspectRatio?: string): string {
-  const KIE_SIZES: [string, number][] = [['1:1', 1], ['3:2', 1.5], ['2:3', 2 / 3]];
-  const parts = aspectRatio?.split(':').map(Number);
-  const ratio = parts && parts[0] && parts[1] ? parts[0] / parts[1] : 1;
-  return KIE_SIZES.reduce((best, cur) =>
-    Math.abs(ratio - cur[1]) < Math.abs(ratio - best[1]) ? cur : best,
-  )[0];
+// nano-banana-2 terima aspect_ratio yang sama dengan yang dihasilkan skill
+// content-brief (4:5, 9:16, 16:9, dst) -- kirim langsung, fallback 'auto'
+// kalau di luar daftar yang didukung (jaga-jaga varian tak terduga dari LLM).
+const SUPPORTED_ASPECT = new Set([
+  '1:1', '1:4', '1:8', '2:3', '3:2', '3:4', '4:1', '4:3', '4:5', '5:4',
+  '8:1', '9:16', '16:9', '21:9', 'auto',
+]);
+function resolveAspect(aspectRatio?: string): string {
+  return aspectRatio && SUPPORTED_ASPECT.has(aspectRatio) ? aspectRatio : 'auto';
 }
 
 type ImgGenState =
@@ -131,7 +131,7 @@ function ImageGenAsset({
         body: {
           prompt: asset.image_prompt,
           negativePrompt: asset.negative_prompt,
-          size: mapAspectToSize(asset.aspect_ratio),
+          size: resolveAspect(asset.aspect_ratio),
           referenceImageUrls,
           brandProfileId: brandProfileId || undefined,
         },
