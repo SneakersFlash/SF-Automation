@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateBrandProfileDto, UpdateBrandProfileDto } from './dto/brand-profile.dto';
+
+type Tx = Prisma.TransactionClient;
 
 @Injectable()
 export class BrandProfileService {
@@ -28,14 +31,18 @@ export class BrandProfileService {
     });
   }
 
-  // BRAND-02/04: update (termasuk set default).
+  // BRAND-02/04: update (termasuk set default). isDefault:false eksplisit pada
+  // profil yang sedang default TIDAK dibiarkan bikin nol default — invariant
+  // dijaga via ensureOneDefault (jangan sampai "Default" senyap tanpa brand).
   async update(id: string, dto: UpdateBrandProfileDto) {
     await this.get(id);
     return this.prisma.$transaction(async (tx) => {
       if (dto.isDefault) {
         await tx.brandProfile.updateMany({ data: { isDefault: false } });
       }
-      return tx.brandProfile.update({ where: { id }, data: dto });
+      const updated = await tx.brandProfile.update({ where: { id }, data: dto });
+      if (dto.isDefault === false) await this.ensureOneDefault(tx);
+      return updated;
     });
   }
 
@@ -48,10 +55,24 @@ export class BrandProfileService {
     });
   }
 
-  // BRAND-03: hapus (Owner only — enforce di controller).
+  // BRAND-03: hapus (Owner only — enforce di controller). Kalau yang dihapus
+  // adalah default, promote profil lain (tertua) jadi default baru — jangan
+  // biarkan "Default" jadi tanpa brand context secara diam-diam.
   async remove(id: string) {
     await this.get(id);
-    await this.prisma.brandProfile.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.brandProfile.delete({ where: { id } });
+      await this.ensureOneDefault(tx);
+    });
     return { ok: true };
+  }
+
+  // Invariant: selalu ada tepat satu BrandProfile isDefault=true (kalau masih
+  // ada profil sama sekali). Kalau nol default tersisa, promote yang tertua.
+  private async ensureOneDefault(tx: Tx) {
+    const stillDefault = await tx.brandProfile.findFirst({ where: { isDefault: true } });
+    if (stillDefault) return;
+    const next = await tx.brandProfile.findFirst({ orderBy: { createdAt: 'asc' } });
+    if (next) await tx.brandProfile.update({ where: { id: next.id }, data: { isDefault: true } });
   }
 }
