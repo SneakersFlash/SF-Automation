@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { Request } from 'express';
+import { PrismaService } from '../prisma/prisma.service';
 import type { AuthUser } from './current-user.decorator';
 import type { Role } from './roles.decorator';
 
@@ -17,7 +18,10 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  constructor(private readonly jwt: JwtService) {}
+  constructor(
+    private readonly jwt: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
     const req = ctx.switchToHttp().getRequest<Request & { user?: AuthUser }>();
@@ -25,12 +29,22 @@ export class JwtAuthGuard implements CanActivate {
     if (!header?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Token tidak ada.');
     }
+    let payload: JwtPayload;
     try {
-      const payload = await this.jwt.verifyAsync<JwtPayload>(header.slice(7));
-      req.user = { id: payload.sub, email: payload.email, role: payload.role };
-      return true;
+      payload = await this.jwt.verifyAsync<JwtPayload>(header.slice(7));
     } catch {
       throw new UnauthorizedException('Sesi tidak valid atau kedaluwarsa.');
     }
+    // Cek isActive live (bukan hanya signature) — deaktivasi Owner harus
+    // langsung berlaku, tidak nunggu token 8 jam kedaluwarsa sendiri.
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { isActive: true },
+    });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Akun nonaktif atau tidak ditemukan.');
+    }
+    req.user = { id: payload.sub, email: payload.email, role: payload.role };
+    return true;
   }
 }
