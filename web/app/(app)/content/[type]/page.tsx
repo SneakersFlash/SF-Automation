@@ -97,7 +97,8 @@ function ImageGenAsset({
   brandProfileId: string;
 }) {
   const [state, setState] = useState<ImgGenState>({ status: 'idle' });
-  const [files, setFiles] = useState<File[]>([]);
+  const [productPhoto, setProductPhoto] = useState<File | null>(null);
+  const [referencePhoto, setReferencePhoto] = useState<File | null>(null);
   const [showUpload, setShowUpload] = useState(false);
 
   // Polling status sampai done/error (kie.ai handle async-nya sendiri via
@@ -145,11 +146,14 @@ function ImageGenAsset({
   }
 
   async function handleGenerateWithPhotos() {
-    if (files.length === 0) return;
+    const picked = [productPhoto, referencePhoto].filter((f): f is File => Boolean(f));
+    if (picked.length === 0) return;
     setState({ status: 'busy' });
     try {
+      // Urutan dijaga: foto produk dulu baru referensi -- filesUrl kie.ai
+      // memperlakukan gambar pertama sbg basis utama untuk image-edit.
       const uploaded = await Promise.all(
-        files.map((f) => apiUpload<{ url: string }>('/creative/images/upload', f)),
+        picked.map((f) => apiUpload<{ url: string }>('/creative/images/upload', f)),
       );
       await runGenerate(uploaded.map((u) => u.url));
     } catch (err) {
@@ -192,21 +196,36 @@ function ImageGenAsset({
       </div>
 
       {showUpload && (state.status === 'idle' || state.status === 'error') && (
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
-            className="text-xs text-paper-dim"
-          />
+        <div className="mb-2 space-y-2 rounded-chip border border-line/40 p-2">
+          <div>
+            <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-paper-faint">
+              Foto Produk
+            </label>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setProductPhoto(e.target.files?.[0] ?? null)}
+              className="text-xs text-paper-dim"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-paper-faint">
+              Foto Referensi (gaya/pose, opsional)
+            </label>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setReferencePhoto(e.target.files?.[0] ?? null)}
+              className="text-xs text-paper-dim"
+            />
+          </div>
           <Button
             type="button"
             className="text-xs"
-            disabled={files.length === 0}
+            disabled={!productPhoto && !referencePhoto}
             onClick={handleGenerateWithPhotos}
           >
-            Generate ({files.length} foto)
+            Generate dengan Foto
           </Button>
         </div>
       )}
