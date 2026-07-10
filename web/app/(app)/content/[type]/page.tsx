@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { api } from '@/lib/api';
-import { useAction, useFetch } from '@/lib/hooks';
+import { api, ApiError } from '@/lib/api';
+import { useFetch } from '@/lib/hooks';
 import {
   Alert,
   Button,
@@ -46,6 +46,13 @@ interface ContentItem {
   visualStyle: string;
 }
 
+// Status generate per item. Tiap item digenerate lewat request terpisah agar
+// hasilnya muncul begitu selesai (progress nyata, bukan nunggu seluruh batch).
+type ItemGen =
+  | { status: 'pending' }
+  | { status: 'done'; result: unknown }
+  | { status: 'error'; error: string };
+
 function emptyItem(): ContentItem {
   return { productName: '', description: '', goal: '', message: '', cta: '', visualStyle: '' };
 }
@@ -57,10 +64,19 @@ export default function ContentTypePage() {
   const meta = TYPE_META[type];
 
   const brands = useFetch<BrandProfile[]>(() => api('/brand-profiles'));
-  const { busy, error, run } = useAction();
   const [brandProfileId, setBrandProfileId] = useState('');
   const [items, setItems] = useState<ContentItem[]>([emptyItem()]);
-  const [results, setResults] = useState<unknown[] | null>(null);
+  const [gen, setGen] = useState<ItemGen[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Timer elapsed selama generate — sinyal anti-freeze buat wait ~1 menit.
+  useEffect(() => {
+    if (!busy) return;
+    setElapsed(0);
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
 
   if (!meta) notFound();
 
@@ -76,17 +92,41 @@ export default function ContentTypePage() {
 
   async function generate(e: React.FormEvent) {
     e.preventDefault();
-    setResults(null);
-    await run(async () => {
-      // Tiap item dikunci ke tipe halaman ini.
-      const payloadItems = items.map((it) => ({ ...it, contentType: type }));
-      const res = await api<{ results: unknown[] }>('/creative/content-brief', {
-        method: 'POST',
-        body: { brandProfileId: brandProfileId || undefined, items: payloadItems },
-      });
-      setResults(res.results);
-    });
+    // Snapshot item saat submit; tiap item dikunci ke tipe halaman ini.
+    const snapshot = items.map((it) => ({ ...it, contentType: type }));
+    setGen(snapshot.map(() => ({ status: 'pending' })));
+    setBusy(true);
+
+    // N request paralel, 1 item per request. Konkurensi sama seperti sebelumnya
+    // (backend memang Promise.all), tapi tiap hasil bisa render begitu selesai.
+    await Promise.all(
+      snapshot.map(async (item, idx) => {
+        try {
+          const res = await api<{ results: unknown[] }>('/creative/content-brief', {
+            method: 'POST',
+            body: { brandProfileId: brandProfileId || undefined, items: [item] },
+          });
+          setGen((prev) =>
+            prev
+              ? prev.map((g, i) => (i === idx ? { status: 'done', result: res.results[0] } : g))
+              : prev,
+          );
+        } catch (err) {
+          const msg = err instanceof ApiError ? err.message : 'Gagal generate item ini.';
+          setGen((prev) =>
+            prev ? prev.map((g, i) => (i === idx ? { status: 'error', error: msg } : g)) : prev,
+          );
+        }
+      }),
+    );
+
+    setBusy(false);
   }
+
+  const settled = gen?.filter((g) => g.status !== 'pending').length ?? 0;
+  const total = gen?.length ?? 0;
+  const doneResults =
+    gen?.filter((g) => g.status === 'done').map((g) => (g as { result: unknown }).result) ?? [];
 
   return (
     <div className="mx-auto max-w-[1200px]">
@@ -115,7 +155,7 @@ export default function ContentTypePage() {
                   <button
                     type="button"
                     onClick={() => removeItem(idx)}
-                    disabled={items.length === 1}
+                    disabled={items.length === 1 || busy}
                     className="text-xs text-down disabled:opacity-30"
                   >
                     Hapus
@@ -173,35 +213,61 @@ export default function ContentTypePage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button type="button" variant="ghost" onClick={addItem}>+ Tambah konten</Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? 'Generating…' : 'Generate'}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="ghost" onClick={addItem} disabled={busy}>
+              + Tambah konten
             </Button>
+            <Button type="submit" disabled={busy}>
+              {busy ? `Generating… ${elapsed}s` : 'Generate'}
+            </Button>
+            {busy && (
+              <span className="font-mono text-xs text-paper-faint">
+                {settled}/{total} selesai · biasanya ~1 menit/item (paralel)
+              </span>
+            )}
           </div>
         </form>
-        {error && <div className="mt-3"><Alert kind="error">{error}</Alert></div>}
       </Card>
 
-      {results && (
+      {gen && (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-xs uppercase tracking-wider text-paper-faint">
-              {results.length} hasil — JSON siap oper ke AI
+              {settled}/{total} selesai
+              {doneResults.length > 0 && ' — JSON siap oper ke AI'}
             </span>
-            <CopyButton text={JSON.stringify(results, null, 2)} />
+            {doneResults.length > 0 && (
+              <CopyButton text={JSON.stringify(doneResults, null, 2)} />
+            )}
           </div>
-          {results.map((r, idx) => (
+
+          {gen.map((g, idx) => (
             <Card key={idx}>
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="font-mono text-xs uppercase tracking-wider text-flash">
                   {meta.label} · {idx + 1}
                 </span>
-                <CopyButton text={JSON.stringify(r, null, 2)} />
+                {g.status === 'done' && (
+                  <CopyButton text={JSON.stringify(g.result, null, 2)} />
+                )}
               </div>
-              <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-paper-dim">
-                {JSON.stringify(r, null, 2)}
-              </pre>
+
+              {g.status === 'pending' && (
+                <div className="space-y-2" aria-live="polite">
+                  <span className="font-mono text-xs text-paper-faint">Generating… {elapsed}s</span>
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-line" />
+                  <div className="h-3 w-full animate-pulse rounded bg-line" />
+                  <div className="h-3 w-5/6 animate-pulse rounded bg-line" />
+                </div>
+              )}
+
+              {g.status === 'error' && <Alert kind="error">{g.error}</Alert>}
+
+              {g.status === 'done' && (
+                <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-paper-dim">
+                  {JSON.stringify(g.result, null, 2)}
+                </pre>
+              )}
             </Card>
           ))}
         </div>
