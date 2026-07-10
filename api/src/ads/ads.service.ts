@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -20,6 +21,8 @@ interface AdConcept {
 
 @Injectable()
 export class AdsService {
+  private readonly log = new Logger(AdsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly openclaw: OpenclawService,
@@ -31,28 +34,38 @@ export class AdsService {
       subject: dto.subject,
     });
 
-    const generation = await this.prisma.generation.create({
-      data: {
-        skill: 'ads-generate',
-        brandProfileId: dto.brandProfileId,
-        userId,
-        input: dto as unknown as Prisma.InputJsonValue,
-        output: concepts as unknown as Prisma.InputJsonValue,
-        status: 'done',
-        adVariants: {
-          create: concepts.map((c) => ({
-            angle: c.angle,
-            hook: c.hook,
-            primaryText: c.primary_text,
-            headline: c.headline,
-            cta: c.cta,
-            visual: c.visual,
-          })),
-        },
-      },
-      include: { adVariants: true },
+    const variantCreate = concepts.map((c) => ({
+      angle: c.angle,
+      hook: c.hook,
+      primaryText: c.primary_text,
+      headline: c.headline,
+      cta: c.cta,
+      visual: c.visual,
+    }));
+    const data = (brandProfileId?: string) => ({
+      skill: 'ads-generate',
+      brandProfileId,
+      userId,
+      input: dto as unknown as Prisma.InputJsonValue,
+      output: concepts as unknown as Prisma.InputJsonValue,
+      status: 'done',
+      adVariants: { create: variantCreate },
     });
-    return generation;
+
+    try {
+      return await this.prisma.generation.create({
+        data: data(dto.brandProfileId),
+        include: { adVariants: true },
+      });
+    } catch (e) {
+      // brandProfileId basi/terhapus → FK violation. Jangan gagalkan generate;
+      // simpan tanpa link brand (sejalan dgn CreativeService.logGeneration).
+      this.log.warn(`Ads generate: simpan tanpa brandProfileId (${String(e)}).`);
+      return this.prisma.generation.create({
+        data: data(undefined),
+        include: { adVariants: true },
+      });
+    }
   }
 
   // ADS-02: Performance Review (read-only). Butuh Meta/TikTok Ads creds.

@@ -30,6 +30,12 @@ export class OpenclawService {
     // Endpoint OpenClaw hanya terima "openclaw" atau "openclaw/<agentId>".
     return this.config.get<string>('OPENCLAW_AGENT_MODEL') ?? 'openclaw';
   }
+  // Timeout satu panggilan skill. GPT-5.5 untuk brief/copy berat bisa 40–70s;
+  // 60s terlalu mepet (abort → 503) padahal nginx sanggup 300s. Default 120s,
+  // bisa dituning via env. Tetap < proxy_read_timeout nginx.
+  private get timeoutMs(): number {
+    return Number(this.config.get<string>('OPENCLAW_TIMEOUT_MS') ?? '120000');
+  }
 
   // Jalankan skill generatif, kembalikan output ter-parse (JSON) bertipe T.
   // Retry sekali kalau JSON gagal di-parse (SPIKE decision: CONDITIONAL).
@@ -61,7 +67,7 @@ export class OpenclawService {
     content: string,
     opts: { timeoutMs?: number; agentId?: string } = {},
   ): Promise<string> {
-    const { timeoutMs = 60000, agentId } = opts;
+    const { timeoutMs = this.timeoutMs, agentId } = opts;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     const started = Date.now();

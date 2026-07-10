@@ -4,6 +4,7 @@ import { Job } from 'bullmq';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenclawService } from '../openclaw/openclaw.service';
+import { buildBrandContext } from '../brand-profile/brand-context';
 import { CONTENT_DROP_QUEUE } from './content-drop.service';
 
 interface DropJob {
@@ -32,6 +33,13 @@ export class ContentDropProcessor extends WorkerHost {
       return;
     }
 
+    // Brand context dari subject (fallback default) → output on-brand, konsisten
+    // dengan flow interaktif CreativeService.
+    const bp = subject.brandProfileId
+      ? await this.prisma.brandProfile.findUnique({ where: { id: subject.brandProfileId } })
+      : await this.prisma.brandProfile.findFirst({ where: { isDefault: true } });
+    const brand = buildBrandContext(bp);
+
     const subjectPayload = {
       name: subject.name,
       goal: subject.goal,
@@ -52,14 +60,17 @@ export class ContentDropProcessor extends WorkerHost {
     try {
       const [briefStory, briefCarousel] = await Promise.all([
         this.openclaw.run<Record<string, unknown>>('content-brief', {
+          brand,
           item: { ...baseItem, contentType: 'story' },
         }),
         this.openclaw.run<Record<string, unknown>>('content-brief', {
+          brand,
           item: { ...baseItem, contentType: 'carousel' },
         }),
       ]);
       const brief = { story: briefStory, carousel: briefCarousel };
       const copy = await this.openclaw.run<Record<string, unknown>>('copywriting', {
+        brand,
         subject: subjectPayload,
       });
       const humanized = await this.openclaw.chat(
@@ -67,6 +78,7 @@ export class ContentDropProcessor extends WorkerHost {
         { agentId: 'sf-humanize' },
       );
       const ads = await this.openclaw.run<unknown[]>('ads-generate', {
+        brand,
         subject: subjectPayload,
       });
 
