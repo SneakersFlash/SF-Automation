@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { api, ApiError } from '@/lib/api';
+import { api, apiUpload, ApiError } from '@/lib/api';
 import { useFetch } from '@/lib/hooks';
 import {
   Alert,
@@ -55,6 +55,188 @@ type ItemGen =
 
 function emptyItem(): ContentItem {
   return { productName: '', description: '', goal: '', message: '', cta: '', visualStyle: '' };
+}
+
+// CRE-06: generate gambar asli via kie.ai dari asset visual (image_prompt).
+interface VisualAsset {
+  role?: string;
+  media?: string;
+  image_prompt?: string;
+  aspect_ratio?: string;
+  negative_prompt?: string;
+}
+
+function getVisualAssets(result: unknown): VisualAsset[] {
+  const assets = (result as { assets?: unknown })?.assets;
+  return Array.isArray(assets) ? (assets as VisualAsset[]) : [];
+}
+
+// kie.ai cuma dukung 3 size (1:1|3:2|2:3); skill content-brief pakai aspect_ratio
+// bebas (4:5, 9:16, 16:9, dst) -- petakan ke yang rasionya paling dekat.
+function mapAspectToSize(aspectRatio?: string): string {
+  const KIE_SIZES: [string, number][] = [['1:1', 1], ['3:2', 1.5], ['2:3', 2 / 3]];
+  const parts = aspectRatio?.split(':').map(Number);
+  const ratio = parts && parts[0] && parts[1] ? parts[0] / parts[1] : 1;
+  return KIE_SIZES.reduce((best, cur) =>
+    Math.abs(ratio - cur[1]) < Math.abs(ratio - best[1]) ? cur : best,
+  )[0];
+}
+
+type ImgGenState =
+  | { status: 'idle' }
+  | { status: 'busy' }
+  | { status: 'pending'; id: string }
+  | { status: 'done'; urls: string[] }
+  | { status: 'error'; error: string };
+
+function ImageGenAsset({
+  asset,
+  brandProfileId,
+}: {
+  asset: VisualAsset;
+  brandProfileId: string;
+}) {
+  const [state, setState] = useState<ImgGenState>({ status: 'idle' });
+  const [files, setFiles] = useState<File[]>([]);
+  const [showUpload, setShowUpload] = useState(false);
+
+  // Polling status sampai done/error (kie.ai handle async-nya sendiri via
+  // webhook; polling ini fallback dari sisi FE kalau user masih di halaman).
+  useEffect(() => {
+    if (state.status !== 'pending') return;
+    const id = state.id;
+    const t = setInterval(async () => {
+      try {
+        const row = await api<{
+          status: string;
+          resultImageUrls: string[];
+          errorMessage?: string;
+        }>(`/creative/images/${id}`);
+        if (row.status === 'done') setState({ status: 'done', urls: row.resultImageUrls });
+        else if (row.status === 'error') {
+          setState({ status: 'error', error: row.errorMessage || 'Generate gambar gagal.' });
+        }
+      } catch {
+        // error transient (network) -- biarkan polling lanjut ke tick berikutnya
+      }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [state]);
+
+  async function runGenerate(referenceImageUrls?: string[]) {
+    try {
+      const row = await api<{ id: string }>('/creative/images', {
+        method: 'POST',
+        body: {
+          prompt: asset.image_prompt,
+          negativePrompt: asset.negative_prompt,
+          size: mapAspectToSize(asset.aspect_ratio),
+          referenceImageUrls,
+          brandProfileId: brandProfileId || undefined,
+        },
+      });
+      setState({ status: 'pending', id: row.id });
+    } catch (err) {
+      setState({
+        status: 'error',
+        error: err instanceof ApiError ? err.message : 'Gagal generate gambar.',
+      });
+    }
+  }
+
+  async function handleGenerateWithPhotos() {
+    if (files.length === 0) return;
+    setState({ status: 'busy' });
+    try {
+      const uploaded = await Promise.all(
+        files.map((f) => apiUpload<{ url: string }>('/creative/images/upload', f)),
+      );
+      await runGenerate(uploaded.map((u) => u.url));
+    } catch (err) {
+      setState({
+        status: 'error',
+        error: err instanceof ApiError ? err.message : 'Upload foto gagal.',
+      });
+    }
+  }
+
+  if (asset.media && asset.media !== 'image') return null; // shot list video, bukan target kie.ai
+
+  return (
+    <div className="mt-2 rounded-chip border border-line/60 p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <span className="font-mono text-xs text-paper-faint">{asset.role ?? 'asset'}</span>
+        {(state.status === 'idle' || state.status === 'error') && (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-xs"
+              onClick={() => {
+                setState({ status: 'busy' });
+                void runGenerate();
+              }}
+            >
+              Generate Gambar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-xs"
+              onClick={() => setShowUpload((s) => !s)}
+            >
+              Tambah Foto & Generate
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {showUpload && (state.status === 'idle' || state.status === 'error') && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []).slice(0, 5))}
+            className="text-xs text-paper-dim"
+          />
+          <Button
+            type="button"
+            className="text-xs"
+            disabled={files.length === 0}
+            onClick={handleGenerateWithPhotos}
+          >
+            Generate ({files.length} foto)
+          </Button>
+        </div>
+      )}
+
+      {(state.status === 'busy' || state.status === 'pending') && (
+        <div className="flex items-center gap-2" aria-live="polite">
+          <div className="h-20 w-20 animate-pulse rounded bg-line" />
+          <span className="font-mono text-xs text-paper-faint">
+            {state.status === 'busy' ? 'Upload & mulai generate…' : 'Generating gambar…'}
+          </span>
+        </div>
+      )}
+
+      {state.status === 'error' && <Alert kind="error">{state.error}</Alert>}
+
+      {state.status === 'done' && (
+        <div className="flex flex-wrap gap-2">
+          {state.urls.map((u) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={u}
+              src={u}
+              alt={asset.role ?? 'hasil gambar'}
+              className="h-32 w-32 rounded object-cover"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ContentTypePage() {
@@ -268,6 +450,11 @@ export default function ContentTypePage() {
                   {JSON.stringify(g.result, null, 2)}
                 </pre>
               )}
+
+              {g.status === 'done' && meta.kind === 'visual' &&
+                getVisualAssets(g.result).map((asset, ai) => (
+                  <ImageGenAsset key={ai} asset={asset} brandProfileId={brandProfileId} />
+                ))}
             </Card>
           ))}
         </div>

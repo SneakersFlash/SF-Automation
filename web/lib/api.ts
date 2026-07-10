@@ -71,3 +71,33 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 
   return payload as T;
 }
+
+// Upload file (mis. foto produk/referensi CRE-06) -- FormData, bukan JSON.
+// Terpisah dari api() supaya fungsi inti tetap sederhana & tak berisiko
+// regresi ke semua caller existing yang selalu kirim JSON.
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+  const form = new FormData();
+  form.append('file', file);
+
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: form });
+  } catch {
+    throw new ApiError(0, 'Tidak bisa terhubung ke server. Cek koneksi.');
+  }
+
+  const isJson = res.headers.get('content-type')?.includes('application/json');
+  const payload = isJson ? await res.json().catch(() => null) : null;
+
+  if (!res.ok) {
+    const raw = (payload as { message?: string | string[] } | null)?.message;
+    const message = Array.isArray(raw) ? raw.join(' ') : (raw ?? 'Upload gagal.');
+    throw new ApiError(res.status, message);
+  }
+
+  return payload as T;
+}

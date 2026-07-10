@@ -13,6 +13,7 @@ import { RevenueModule } from './revenue/revenue.module';
 import { AuditModule } from './audit/audit.module';
 import { OpenclawModule } from './openclaw/openclaw.module';
 import { OrchestratorModule } from './orchestrator/orchestrator.module';
+import { ImageGenModule } from './creative/image-gen/image-gen.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OrchestratorModule } from './orchestrator/orchestrator.module';
     AuditModule,
     OpenclawModule,
     OrchestratorModule,
+    ImageGenModule,
   ],
 })
 export class AppModule {}
