@@ -33,8 +33,10 @@ Satu objek untuk item ini:
 ### VISUAL (carousel, image, video_core, ads, feeds9) → kind:"visual"
 Tiap asset = { "role", "media":"image"|"video", "image_prompt", "aspect_ratio", "text_overlay", "negative_prompt", "motion"?, "duration_s"?, "audio_cue"? }
 - image_prompt: konkret & deskriptif — subjek + aksi + environment + komposisi + lighting + palette + mood + lens/kamera + gaya. Prompt gambar boleh English (lazim), tapi copy/brief ikut brand.outputLanguage.
+- WAJIB tegaskan di image_prompt: produk harus tampil AKURAT & DETAIL PENUH (siluet, warna, logo, tekstur, jahitan/pattern asli) — jangan biarkan environment/komposisi mengorbankan/menutupi/menyederhanakan detail produk.
+- WAJIB tegaskan proporsi skala objek REALISTIS (produk vs orang/environment/objek lain sesuai ukuran sebenarnya) KECUALI konsep secara eksplisit memang minta skala surreal/absurd (mis. "sepatu raksasa di tengah kota") — kalau begitu, tulis itu SENGAJA & jelas di image_prompt supaya bukan cacat generate, tapi pilihan kreatif yang disadari.
 - aspect_ratio: pilih sesuai platform (IG feed 4:5 atau 1:1; story/reel 9:16; youtube 16:9).
-- negative_prompt: hal yang dihindari (mis. "distorted logo, extra laces, wrong colorway, watermark, text artifacts, deformed").
+- negative_prompt: hal yang dihindari (mis. "distorted logo, extra laces, wrong colorway, watermark, text artifacts, deformed, incorrect product scale, oversimplified product details").
 - text_overlay: teks singkat on-brand (boleh "").
 Jumlah asset per tipe:
 - image     → 1 asset (media:image).

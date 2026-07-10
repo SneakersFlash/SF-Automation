@@ -9,9 +9,25 @@ import { ConfigService } from '@nestjs/config';
 // Semua task async: 200 cuma artinya task dibuat, bukan selesai.
 export interface CreateTaskInput {
   prompt?: string;
+  negativePrompt?: string; // nano-banana-2 tak punya field negative_prompt -> dilebur ke prompt
   size: string; // aspect_ratio nano-banana-2: 1:1|4:5|9:16|16:9|dst, atau "auto"
   filesUrl?: string[]; // -> input.image_input (maks 14 di kie.ai; DTO kita batasi 5)
   callBackUrl?: string;
+}
+
+// Guardrail standing yang WAJIB nempel di tiap prompt kie.ai: jaga detail
+// produk & skala realistis. Ditulis sbg default yg mengalah ke instruksi
+// eksplisit di prompt itu sendiri (skala absurd yg DISENGAJA tim kreatif
+// tetap jalan, karena model utamakan deskripsi konkret di atas guardrail
+// umum). Lapis kedua di luar SKILL.md content-brief -- berlaku juga utk
+// prompt manual (bukan cuma hasil skill).
+const DETAIL_AND_SCALE_GUARDRAIL =
+  'Preserve the product exactly as described -- accurate shape, color, logo, texture, and material detail; do not simplify, distort, or obscure product features. Keep object scale realistic and proportionate to real-world size, unless the description explicitly asks for a surreal or exaggerated scale.';
+
+function buildFinalPrompt(prompt: string | undefined, negativePrompt: string | undefined): string {
+  const parts = [prompt?.trim() || '', DETAIL_AND_SCALE_GUARDRAIL];
+  if (negativePrompt?.trim()) parts.push(`Avoid: ${negativePrompt.trim()}.`);
+  return parts.filter(Boolean).join(' ');
 }
 
 export interface TaskStatus {
@@ -54,7 +70,7 @@ export class KieaiService {
     const body: Record<string, unknown> = {
       model: this.model,
       input: {
-        prompt: input.prompt ?? '',
+        prompt: buildFinalPrompt(input.prompt, input.negativePrompt),
         image_input: input.filesUrl ?? [],
         aspect_ratio: input.size,
         resolution: '1K',

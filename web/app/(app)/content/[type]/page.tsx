@@ -89,6 +89,71 @@ type ImgGenState =
   | { status: 'done'; urls: string[] }
   | { status: 'error'; error: string };
 
+// Unduh gambar hasil (cross-origin) via blob -- <a download> saja tak selalu
+// berhasil untuk resource beda origin. Fallback: buka tab baru kalau fetch gagal.
+async function downloadImage(url: string, filename: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
+// Zona upload klik-atau-drag&drop untuk 1 foto (produk/referensi).
+function PhotoDropZone({
+  label,
+  file,
+  onChange,
+}: {
+  label: string;
+  file: File | null;
+  onChange: (f: File | null) => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  return (
+    <div>
+      <span className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-paper-faint">
+        {label}
+      </span>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) onChange(f);
+        }}
+        className={`flex min-h-[44px] cursor-pointer items-center justify-center rounded-chip border border-dashed px-3 py-2 text-center text-xs transition-colors ${
+          dragOver
+            ? 'border-flash bg-flash-soft/20 text-flash'
+            : 'border-line/60 text-paper-faint hover:border-line'
+        }`}
+      >
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+          className="hidden"
+        />
+        {file ? file.name : 'Klik atau drag & drop foto ke sini'}
+      </label>
+    </div>
+  );
+}
+
 function ImageGenAsset({
   asset,
   brandProfileId,
@@ -197,28 +262,12 @@ function ImageGenAsset({
 
       {showUpload && (state.status === 'idle' || state.status === 'error') && (
         <div className="mb-2 space-y-2 rounded-chip border border-line/40 p-2">
-          <div>
-            <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-paper-faint">
-              Foto Produk
-            </label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setProductPhoto(e.target.files?.[0] ?? null)}
-              className="text-xs text-paper-dim"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-paper-faint">
-              Foto Referensi (gaya/pose, opsional)
-            </label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setReferencePhoto(e.target.files?.[0] ?? null)}
-              className="text-xs text-paper-dim"
-            />
-          </div>
+          <PhotoDropZone label="Foto Produk" file={productPhoto} onChange={setProductPhoto} />
+          <PhotoDropZone
+            label="Foto Referensi (gaya/pose, opsional)"
+            file={referencePhoto}
+            onChange={setReferencePhoto}
+          />
           <Button
             type="button"
             className="text-xs"
@@ -242,15 +291,25 @@ function ImageGenAsset({
       {state.status === 'error' && <Alert kind="error">{state.error}</Alert>}
 
       {state.status === 'done' && (
-        <div className="flex flex-wrap gap-2">
-          {state.urls.map((u) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={u}
-              src={u}
-              alt={asset.role ?? 'hasil gambar'}
-              className="h-32 w-32 rounded object-cover"
-            />
+        <div className="flex flex-wrap gap-3">
+          {state.urls.map((u, i) => (
+            <div key={u} className="space-y-1">
+              <a href={u} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={u}
+                  alt={asset.role ?? 'hasil gambar'}
+                  className="h-40 w-40 rounded object-cover transition-opacity hover:opacity-80"
+                />
+              </a>
+              <button
+                type="button"
+                onClick={() => downloadImage(u, `${(asset.role ?? 'image').replace(/\s+/g, '-')}-${i + 1}.png`)}
+                className="w-full rounded-chip border border-line px-2 py-1 text-[11px] text-paper-dim transition-colors hover:border-flash hover:text-paper"
+              >
+                Unduh
+              </button>
+            </div>
           ))}
         </div>
       )}

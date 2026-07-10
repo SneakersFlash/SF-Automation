@@ -50,6 +50,7 @@ export class ImageGenService {
     try {
       const { taskId } = await this.kieai.createTask({
         prompt: dto.prompt,
+        negativePrompt: dto.negativePrompt,
         size: dto.size,
         filesUrl: dto.referenceImageUrls,
         callBackUrl,
