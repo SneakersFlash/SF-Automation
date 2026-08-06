@@ -101,10 +101,17 @@ const brand_sites = o.brand_sites || [];
 const RETAILERS = ['planetsports.asia','sportsstation.id','footlocker.com','footlocker.co.id','mapclub.com','map.co.id',
   'sportsdirect.com','jdsports.co.id','zalora.co.id','theiconic.com','rei.com','fleetfeet.com',
   'roadrunnersports.com','shoebacca.com','stansshoes.com','tiso.com'];
-const JUNK = ['suara.com','kompas.com','detik.com','tribunnews.com','liputan6.com','cnnindonesia.com','idntimes.com','kumparan.com',
+// Situs yang gak pernah punya halaman produk beneran: berita, blog, sosmed, forum.
+const JUNK_BASE = ['suara.com','kompas.com','detik.com','tribunnews.com','liputan6.com','cnnindonesia.com','idntimes.com','kumparan.com',
   'medium.com','blogspot.com','wordpress.com','pinterest.com','youtube.com','youtu.be','wikipedia.org','reddit.com','facebook.com',
-  'instagram.com','tiktok.com','twitter.com','x.com','quora.com','ebay.com','carousell.com','olx.co.id','olx.com','lazada.co.id','lazada.com',
-  'shopee.co.id','shopee.com','tokopedia.com','bukalapak.com','blibli.com','akulaku.com','aliexpress.com','amazon.com','alibaba.com'];
+  'instagram.com','tiktok.com','twitter.com','x.com','quora.com'];
+// Marketplace: punya halaman produk beneran + gambar, dan justru paling lengkap
+// nyimpen tiap colorway. Default tetap dibuang (jalur kie.ai gak mau gambar hasil
+// upload seller), tapi dibuka lewat allow_marketplace kalau yang dicari LINK doang.
+const MARKETPLACE = ['ebay.com','carousell.com','olx.co.id','olx.com','lazada.co.id','lazada.com',
+  'shopee.co.id','shopee.com','tokopedia.com','bukalapak.com','blibli.com','akulaku.com',
+  'aliexpress.com','amazon.com','alibaba.com'];
+const JUNK = o.allow_marketplace ? JUNK_BASE : JUNK_BASE.concat(MARKETPLACE);
 const LISTING = /(\\/search|\\/cari|\\?q=|\\/category\\/|\\/kategori\\/|\\/c\\/|catalogsearch|\\/collections\\/?$|\\/brand\\/|\\/sale\\/?$)/i;
 
 function host(u) { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; }
@@ -154,7 +161,16 @@ exports.checkAlreadyFound = `
 const sd = $getWorkflowStaticData('global');
 const st = sd['run_' + $execution.id] || {};
 const item = $input.first().json;
-return [{ json: Object.assign({}, item, { already_found: (!!st.found) || !item.candidate_url }) }];
+
+// Mode strict_article: berhenti CUMA kalau kode artikelnya beneran ketemu di halaman.
+// Tanpa ini, kandidat pertama yang cuma mirip judul udah bikin st.found = true dan
+// sisa kandidat gak pernah di-scrape — persis kasus SKECHERS 150802NAT, di mana
+// halaman brand warna BBK nyantol lewat judul dan halaman NAT gak pernah dibuka.
+// Flag-nya opt-in: tanpa flag, perilakunya sama persis kayak sebelumnya.
+const kuat = st.result && (st.result.sku_match_type === 'exact' || st.result.sku_match_type === 'digits');
+const berhenti = item.strict_article ? (!!st.found && !!kuat) : !!st.found;
+
+return [{ json: Object.assign({}, item, { already_found: berhenti || !item.candidate_url }) }];
 `;
 
 exports.candidateVerify = `
@@ -253,7 +269,14 @@ const skuInPage = skuExact || skuDigit;
 const titleScore = Math.round(overlap((o.brand || '') + ' ' + (o.model || o.title || ''), title || o.candidate_title) * 100);
 const verified = (skuInPage || titleScore >= 40) && images.length >= 1;
 
-if (verified && !st.found) {
+// Boleh NAIK KELAS: hasil yang cuma cocok judul digantikan kalau nemu halaman yang
+// kode artikelnya beneran ada. Tanpa ini, mode strict_article percuma — dia terus
+// nge-scrape kandidat berikutnya tapi hasil bagusnya gak pernah kepakai.
+// Di mode lama gak ngefek: loop-nya udah berhenti di temuan pertama.
+const sudahKuat = st.result && (st.result.sku_match_type === 'exact' || st.result.sku_match_type === 'digits');
+const iniKuat = skuExact || skuDigit;
+
+if (verified && (!st.found || (iniKuat && !sudahKuat))) {
   st.found = true;
   st.result = {
     source: 'local_crawl', tier: o.candidate_tier, matched_local_url: o.candidate_url,

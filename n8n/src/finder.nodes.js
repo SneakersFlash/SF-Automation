@@ -117,6 +117,14 @@ return [{ json: {
   brand, model, sku: article,
   base, article, has_article: !!article,
   sku_variants: article ? [article] : [],
+  // Yang dicari LINK, bukan bahan buat kie.ai — jadi sumber gak harus situs resmi
+  // brand. Marketplace dibolehin karena justru dia yang paling lengkap nyimpen tiap
+  // colorway (link manual yang udah ada pun dari Yahoo Shopping Taiwan).
+  allow_marketplace: true,
+  // Jangan berhenti di kandidat yang cuma mirip judul; terusin sampai ketemu halaman
+  // yang kode artikelnya beneran ada. Konsekuensinya bisa nge-scrape sampai 4 kandidat
+  // per baris (sebelumnya sering cukup 1), jadi biaya spider naik.
+  strict_article: true,
   has_query: hasQuery,
   brand_sites: BRAND_SITES,
   search_batch: batch
