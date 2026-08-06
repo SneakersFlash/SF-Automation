@@ -202,6 +202,112 @@ if (!batch.length) return [];
 return batch.map(b => ({ json: { search: b.search, search_limit: b.search_limit } }));
 `;
 
+// Gantiin rangkaian Loop Over Candidates -> Check Already Found -> Candidate Verify
+// -> Aggregate Links. SEMUA kandidat di-scrape barengan (HTTP node jalan per-item),
+// node ini yang milih.
+//
+// Kenapa loop dalamnya dibuang: SplitInBatches bersarang di n8n gak balik ke posisi
+// awal pas loop luar maju ke baris berikutnya. Akibatnya cuma BARIS PERTAMA yang
+// kandidatnya kescrape; baris kedua dan seterusnya langsung keluar lewat jalur
+// "done" tanpa scrape sama sekali -> NOT FOUND selamanya, seberapa bener pun
+// artikelnya. Terbukti di run: 150802NAT ketemu, 150863NTB dan sisanya nol.
+//
+// Logika ekstraksinya mirip local.candidateVerify dan itu disengaja: alur kontrolnya
+// beda total (sekaligus vs satu-satu). Yang gak boleh beda cuma ATURAN COCOK, dan itu
+// sama-sama dijaga pakai normalisasi buang non-alfanumerik.
+exports.pickBestLink = `
+const row = $('Loop Over Rows').first().json;
+const bs = $('Build Search').first().json;
+const kandidat = $('Rank Candidates').all().map(i => i.json);
+const scrapes = $input.all().map(i => i.json);
+
+function parseHtml(json) {
+  let obj = json;
+  if (typeof obj === 'string') return obj;
+  if (obj && typeof obj.data === 'string') {
+    const s = obj.data.trim();
+    if (s.startsWith('<')) return obj.data;
+    try { obj = JSON.parse(obj.data); } catch (e) { return obj.data; }
+  }
+  if (Array.isArray(obj) && obj[0]) return obj[0].content || obj[0].html || obj[0].raw || '';
+  if (obj && typeof obj.content === 'string') return obj.content;
+  if (obj && typeof obj.html === 'string') return obj.html;
+  if (obj && typeof obj.raw === 'string') return obj.raw;
+  return '';
+}
+function norm(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function tok(v) {
+  const stop = new Set(['men','women','mens','womens','unisex','original','shoes','shoe','sneaker','sneakers','sepatu']);
+  return new Set(String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(t => t && !stop.has(t)));
+}
+function overlap(a, b) {
+  const A = tok(a), B = tok(b);
+  if (!A.size || !B.size) return 0;
+  let i = 0;
+  for (const t of A) { if (B.has(t)) i++; }
+  return i / Math.min(A.size, B.size);
+}
+
+const codes = (Array.isArray(bs.sku_variants) ? bs.sku_variants : []).map(norm).filter(c => c.length >= 5);
+
+const nilai = [];
+for (let i = 0; i < kandidat.length; i++) {
+  const c = kandidat[i] || {};
+  const raw = String(parseHtml(scrapes[i]) || '');
+  if (!raw) continue;
+
+  let title = '';
+  const tm = raw.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+  if (tm) title = tm[1];
+  if (!title) { const h = raw.match(/<title[^>]*>([\\s\\S]{0,200}?)<\\/title>/i); if (h) title = h[1].trim(); }
+
+  const punyaGambar = /og:image/i.test(raw) || /<img[^>]+src=/i.test(raw);
+
+  // Kode ketemu di halaman ATAU di URL-nya. Normalisasi dua sisi, jadi "150802-nat"
+  // di URL dan "SKE150802NAT" di badan halaman sama-sama kena.
+  const nRaw = norm(raw), nUrl = norm(c.candidate_url);
+  const kodeKetemu = codes.some(k => nRaw.indexOf(k) !== -1 || nUrl.indexOf(k) !== -1);
+
+  const skorJudul = Math.round(overlap(bs.base || bs.brand || '', title || c.candidate_title || '') * 100);
+
+  nilai.push({
+    url: c.candidate_url || '',
+    kodeKetemu, skorJudul, punyaGambar,
+    skorKandidat: c.candidate_score || 0
+  });
+}
+
+// Kode ketemu > punya gambar > skor kandidat. Judul cuma penentu terakhir — dia yang
+// dulu bikin halaman warna lain menang.
+nilai.sort((a, b) =>
+  (Number(b.kodeKetemu) - Number(a.kodeKetemu))
+  || (Number(b.punyaGambar) - Number(a.punyaGambar))
+  || (b.skorKandidat - a.skorKandidat)
+  || (b.skorJudul - a.skorJudul));
+
+const cocok = nilai.filter(n => n.kodeKetemu && n.url);
+const mirip = nilai.filter(n => !n.kodeKetemu && n.url && n.punyaGambar && n.skorJudul >= 40);
+
+let link1 = '', link2 = '';
+if (cocok.length) {
+  link1 = cocok[0].url;
+  if (cocok[1]) link2 = cocok[1].url;
+  else if (mirip[0]) link2 = mirip[0].url;
+} else if (mirip.length) {
+  link1 = 'CEK DULU (judul mirip, artikel gak ketemu di halaman) - ' + mirip[0].url;
+} else {
+  link1 = 'NOT FOUND - artikel ' + (bs.article || '(kosong)')
+    + ' | ' + nilai.length + ' halaman dicek'
+    + ' | ' + new Date().toISOString().slice(0, 10);
+}
+
+return [{ json: {
+  row_number: row.row_number,
+  'Link Recommendation 1': link1,
+  'Link Recommendation 2': link2
+} }];
+`;
+
 // Rakit hasil jadi 2 kolom link halaman produk.
 // Rec 1 = kandidat terverifikasi (artikel kecocokan di halaman, atau judul >= 40%).
 // Rec 2 = runner-up yang ke-rekam SEBELUM yang pertama ketemu. Sering kosong, dan itu
