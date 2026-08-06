@@ -1,0 +1,643 @@
+{
+  "name": "SNKRS Flash - Article Image Finder (spider)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1rYb5KTgiwnMYhmCutuyMzZkKywSWsIVM_hlwfKK7Leo",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1117001467",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Read Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst out = [];\nfor (const it of $input.all()) {\n  const r = it.json || {};\n\n  const brand = String(r['BRAND'] || '').trim();\n  const article = String(r['ARTIKEL'] || '').trim().toUpperCase();\n  const model = String(r['SKU NAME'] || '').trim();\n  const link1 = String(r['Link Recommendation 1'] || '').trim();\n  const ket = String(r['KETERANGAN'] || '').trim().toUpperCase();\n\n  // Udah ada linknya (atau udah ditandai NOT FOUND run sebelumnya) -> lewat.\n  // Mau dicari ulang? kosongin selnya di sheet.\n  if (link1) continue;\n\n  // Asetnya udah ada di Drive, gak usah dicariin.\n  if (ket.indexOf('GDRIVE') !== -1) continue;\n\n  // Tanpa artikel DAN tanpa nama, gak ada yang bisa dicari.\n  if (!article && !model) continue;\n\n  out.push({ json: { row_number: r.row_number, brand, article, model } });\n}\nreturn out;\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Filter Pending",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000004",
+      "name": "Loop Over Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -220,
+        300
+      ],
+      "notes": "batchSize WAJIB 1 - Build Search & Aggregate Links pakai $('Loop Over Rows').first()"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\nconst BRAND_MAP = {\n  adidas:['adidas.co.id','adidas.com'], nike:['nike.com'], puma:['puma.com','id.puma.com'],\n  reebok:['reebok.com'], asics:['asics.com'], newbalance:['newbalance.co.id','newbalance.com'],\n  converse:['converse.co.id','converse.com'], vans:['vans.co.id','vans.com'],\n  diadora:['diadora.co.id','diadora.com'],\n  // \"HOKA ONE ONE\" di sheet -> key jadi 'hokaoneone'. Tanpa alias ini dia nebak\n  // hokaoneone.com yang bukan situs mereka.\n  hoka:['hoka.com'], hokaoneone:['hoka.com'],\n  on:['on.com','on-running.com'], onrunning:['on.com','on-running.com'], oncloud:['on.com','on-running.com'],\n  crocs:['crocs.co.id','crocs.com'], fila:['fila.co.id','fila.com'], skechers:['skechers.com','skechers.co.id'],\n  underarmour:['underarmour.com'], saucony:['saucony.com'], ortuseight:['ortuseight.com'], mizuno:['mizuno.com'],\n  airjordan:['nike.com'], jordan:['nike.com']\n};\n\nfunction brandSites(brand) {\n  const k = String(brand || '').toLowerCase().replace(/[^a-z]/g, '');\n  if (BRAND_MAP[k]) return BRAND_MAP[k];\n  return k ? [k + '.com', k + '.co.id'] : [];\n}\n\n\nconst o = $input.first().json;\nconst brand = String(o.brand || '').trim();\nconst article = String(o.article || '').trim().toUpperCase();\nconst rawModel = String(o.model || '').trim();\n\n// Bersihin nama: buang kode artikel di ekor (\"... - 11C056400\"), filler Indonesia,\n// dan nama brand yang dobel. Sisanya baru kepake sebagai keyword cadangan.\nlet model = rawModel.replace(/[-\\u2013]\\s*[A-Z]{0,3}\\d[\\dA-Z.\\- ]{3,}\\s*$/i, '').trim();\nconst FILLER = /\\b(sepatu|sandal|lari|running|jalan|wanita|women|womens|pria|men|mens|unisex|anak|kids|original|terbaru|new|size|ukuran|no|nomor|casual|sneakers|sneaker)\\b/gi;\nmodel = model.replace(FILLER, ' ').replace(/\\s{2,}/g, ' ').trim();\nif (brand) {\n  const br = new RegExp('\\\\b' + brand.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '\\\\b', 'gi');\n  model = model.replace(br, ' ').replace(/\\s{2,}/g, ' ').trim();\n}\nif (!model) model = rawModel;\n\nconst BRAND_SITES = brandSites(brand);\n\nconst artQuery = article ? [brand, article].filter(Boolean).join(' ').trim() : '';\nconst base = [brand, model].filter(Boolean).join(' ').trim();\nconst hasQuery = !!(artQuery || base);\n\n// country_code SENGAJA gak diisi. Kode artikel itu global — link yang selama ini\n// dipakai manual malah dari toko Taiwan. Ngunci ke 'id' bikin hasil kesempitan.\nconst batch = [];\nif (artQuery) batch.push({ search: artQuery, search_limit: 10 });\nif (base && base !== artQuery) batch.push({ search: base, search_limit: 10 });\nfor (const bs of BRAND_SITES) {\n  batch.push({ search: (artQuery || base) + ' site:' + bs, search_limit: 5 });\n}\n\n// sku_variants dipakai Candidate Verify buat exact-match. Cukup artikel apa adanya:\n// pencocokannya normalisasi (buang non-alfanumerik) di kedua sisi, jadi \"208188-001\"\n// di halaman tetap kena sama varian \"208188001\". Gak perlu bikin varian dash.\nreturn [{ json: {\n  row_number: o.row_number,\n  brand, model, sku: article,\n  base, article, has_article: !!article,\n  sku_variants: article ? [article] : [],\n  has_query: hasQuery,\n  brand_sites: BRAND_SITES,\n  search_batch: batch\n} }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000005",
+      "name": "Build Search",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        420
+      ],
+      "notes": "Pakai kolom ARTIKEL apa adanya. TIDAK pakai deriveVariants - artikel di sheet ini udah bersih."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-has-query",
+              "leftValue": "={{ $json.has_query }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000006",
+      "name": "Has Query?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst o = $input.first().json;\nconst batch = Array.isArray(o.search_batch) ? o.search_batch : [];\nif (!batch.length) return [];\nreturn batch.map(b => ({ json: { search: b.search, search_limit: b.search_limit } }));\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000007",
+      "name": "Split Search Batch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.spider.cloud/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SPIDER_API_KEY_DISINI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ search: $json.search, search_limit: $json.search_limit, country_code: $json.country_code, fetch_page_content: false }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000008",
+      "name": "Spider Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        340
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "notes": "GANTI SPIDER_API_KEY_DISINI. onError=continue: error ditangkep Rank Candidates jadi spider_error, jangan matiin run."
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst o = $('Build Search').first().json;\n\nfunction collect(anyJson) {\n  let out = []; let obj = anyJson;\n  if (obj && typeof obj.data === 'string') { try { obj = JSON.parse(obj.data); } catch (e) {} }\n  const push = (arr) => { for (const el of arr) { if (!el) continue;\n    if (Array.isArray(el)) push(el);\n    else if (el.url || el.link) out.push(el);\n    else if (Array.isArray(el.results)) push(el.results);\n    else if (Array.isArray(el.content)) push(el.content);\n    else if (el.data) { try { const p = typeof el.data === 'string' ? JSON.parse(el.data) : el.data; push(Array.isArray(p) ? p : [p]); } catch (e) {} }\n  }};\n  if (Array.isArray(obj)) push(obj);\n  else if (obj && Array.isArray(obj.results)) push(obj.results);\n  else if (obj && Array.isArray(obj.content)) push(obj.content);\n  else if (obj) push([obj]);\n  return out;\n}\n\nlet raw = []; let spiderError = '';\nfor (const it of $input.all()) {\n  const j = it.json || {};\n  let probe = j;\n  if (probe && typeof probe.data === 'string') { try { probe = JSON.parse(probe.data); } catch (e) {} }\n  if (!spiderError && probe && probe.error) {\n    spiderError = typeof probe.error === 'string' ? probe.error : (probe.error.message || JSON.stringify(probe.error).slice(0, 160));\n  }\n  raw = raw.concat(collect(j));\n}\n\nconst brand_sites = o.brand_sites || [];\nconst RETAILERS = ['planetsports.asia','sportsstation.id','footlocker.com','footlocker.co.id','mapclub.com','map.co.id',\n  'sportsdirect.com','jdsports.co.id','zalora.co.id','theiconic.com','rei.com','fleetfeet.com',\n  'roadrunnersports.com','shoebacca.com','stansshoes.com','tiso.com'];\nconst JUNK = ['suara.com','kompas.com','detik.com','tribunnews.com','liputan6.com','cnnindonesia.com','idntimes.com','kumparan.com',\n  'medium.com','blogspot.com','wordpress.com','pinterest.com','youtube.com','youtu.be','wikipedia.org','reddit.com','facebook.com',\n  'instagram.com','tiktok.com','twitter.com','x.com','quora.com','ebay.com','carousell.com','olx.co.id','olx.com','lazada.co.id','lazada.com',\n  'shopee.co.id','shopee.com','tokopedia.com','bukalapak.com','blibli.com','akulaku.com','aliexpress.com','amazon.com','alibaba.com'];\nconst LISTING = /(\\/search|\\/cari|\\?q=|\\/category\\/|\\/kategori\\/|\\/c\\/|catalogsearch|\\/collections\\/?$|\\/brand\\/|\\/sale\\/?$)/i;\n\nfunction host(u) { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; }\n// exact match / subdomain saja — includes() dulu bikin 'amazon.com' ketembak sebagai brand-site 'on.com'\nfunction inList(h, list) { return list.some(d => h === d || h.endsWith('.' + d)); }\nfunction tok(v) { const stop = new Set(['adidas','asics','nike','reebok','puma','crocs','diadora','hoka','new','balance','converse','vans','men','women','mens','womens','unisex','original','shoe','shoes','sneaker','sneakers','sepatu']); return new Set(String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(t => t && !stop.has(t))); }\nfunction overlap(a, b) { const A = tok(a), B = tok(b); if (!A.size || !B.size) return 0; let i = 0; for (const t of A) { let m = B.has(t); if (!m) for (const u of B) { if (t.length >= 4 && u.length >= 4 && (t.includes(u) || u.includes(t))) { m = true; break; } } if (m) i++; } return i / Math.min(A.size, B.size); }\n\nconst seen = new Set(); const scored = []; const debugSeen = [];\nfor (const r of raw) {\n  const url = r.url || r.link || ''; const title = r.title || r.name || '';\n  if (!url || seen.has(url)) continue; seen.add(url);\n  const h = host(url); if (!h) continue;\n  debugSeen.push(h);\n  if (inList(h, JUNK)) continue;\n  if (LISTING.test(url)) continue;\n\n  let tier = 'other', domainScore = 0.45;\n  if (inList(h, brand_sites)) { tier = 'brand'; domainScore = 1.0; }\n  else if (inList(h, RETAILERS)) { tier = 'retail'; domainScore = 0.75; }\n\n  const titleScore = overlap(o.base || ((o.brand || '') + ' ' + (o.model || o.sku || '')), title);\n  scored.push({ url, title, host: h, tier, domainScore, titleScore, finalScore: domainScore * 0.6 + titleScore * 0.4 });\n}\n\nconst rank = { brand: 0, retail: 1, other: 2 };\nscored.sort((a, b) => (rank[a.tier] - rank[b.tier]) || (b.finalScore - a.finalScore));\n// Dipotong dari 8 -> 4. Kandidat rank 5+ hampir gak pernah kepakai, tapi tiap satunya\n// = satu scrape berbayar. Brand-site udah selalu di urutan atas.\nconst top = scored.slice(0, 4);\n\nif (!top.length) {\n  return [{ json: Object.assign({}, o, {\n    candidate_url: '', candidate_title: '', candidate_score: 0, candidate_tier: 'none',\n    no_candidates: true, spider_error: spiderError, debug_raw: raw.length,\n    debug_domains: [...new Set(debugSeen)]\n  }) }];\n}\nreturn top.map(c => ({ json: Object.assign({}, o, {\n  candidate_url: c.url, candidate_title: c.title, candidate_score: c.finalScore,\n  candidate_tier: c.tier, no_candidates: false, spider_error: spiderError,\n  debug_domains: [...new Set(debugSeen)]\n}) }));\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000009",
+      "name": "Rank Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        340
+      ],
+      "notes": "brand-site 1.0 > retailer 0.75 > lain 0.45; buang marketplace/berita/sosmed; potong 4 kandidat"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-has-candidates",
+              "leftValue": "={{ $json.no_candidates }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-00000000000a",
+      "name": "Has Candidates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-00000000000b",
+      "name": "Loop Over Candidates",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        260
+      ],
+      "notes": "batchSize WAJIB 1 dan harus sekuensial - Candidate Verify pakai $('Check Already Found').first() dan short-circuit lewat staticData"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst sd = $getWorkflowStaticData('global');\nconst st = sd['run_' + $execution.id] || {};\nconst item = $input.first().json;\nreturn [{ json: Object.assign({}, item, { already_found: (!!st.found) || !item.candidate_url }) }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-00000000000c",
+      "name": "Check Already Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c-skip",
+              "leftValue": "={{ $json.already_found }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-00000000000d",
+      "name": "Scrape Kandidat Ini?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        360
+      ],
+      "notes": "Udah ketemu di kandidat sebelumnya -> balik ke loop tanpa scrape. Tiap scrape itu bayar."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.spider.cloud/crawl",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SPIDER_API_KEY_DISINI"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ url: $json.candidate_url, limit: 1, return_format: 'raw', request: 'smart', store_data: false }) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "id": "a1000000-0000-4000-8000-00000000000e",
+      "name": "Candidate Scrape",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        300
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "GANTI SPIDER_API_KEY_DISINI. return_format raw = HTML mentah, dibutuhin parseHtml/ld+json di Candidate Verify."
+    },
+    {
+      "parameters": {
+        "jsCode": "\n\n// ===== SHARED v18 =====\n// Jangan edit di salah satu workflow doang. Ubah di n8n/src/lib.js terus jalanin: node n8n/build.js\n\nfunction looksLikeArticle(s) {\n  const S = String(s || '').toUpperCase();\n  return /^[A-Z]{1,3}\\d{4,6}(-\\d{2,3})?$/.test(S)   // IH8984, CT1685-100, DZ5485-612\n      || /^\\d{5,6}-\\d{2,3}$/.test(S)                 // 11016-001, 398846-87\n      || /^[A-Z]\\d{3}[A-Z]{2,3}\\d?$/.test(S);        // U370AI (New Balance)\n}\n\n// Posisi dash beda per brand. PUMA 6+2, Nike/Crocs 6+3. Default coba dua-duanya.\nconst DASH_SPLIT = {\n  puma: [2, 3],\n  nike: [3], jordan: [3], crocs: [3], reebok: [3], asics: [3], converse: [3]\n};\n\nfunction deriveVariants(brand, sku, model) {\n  const out = new Set();\n  const S = String(sku || '').trim().toUpperCase();\n  const B = String(brand || '').trim().toUpperCase().replace(/[^A-Z]/g, '');\n  const bKey = String(brand || '').toLowerCase().replace(/[^a-z]/g, '');\n  if (S) out.add(S);\n\n  // 1) Prefix internal 3 huruf (CCR/CON/DIA/HKE) dibuang.\n  //    Guard: huruf pertama prefix harus sama dengan huruf pertama brand, biar kode asli\n  //    (Nike CT1685-100, adidas IH8984, NB U370AI) gak ikut kepotong.\n  let stripped = '';\n  let m = S.match(/^([A-Z]{3})(\\d[\\dA-Z-]{4,})$/);\n  if (!m) m = S.match(/^([A-Z]{3})([A-Z]\\d[\\dA-Z-]{3,})$/);\n  if (m && B && m[1][0] === B[0]) { stripped = m[2]; out.add(stripped); }\n\n  // 2) Artikel asli sering nempel di ekor model: \"... - 11016001\"\n  let tail = '';\n  const tm = String(model || '').toUpperCase().match(/[-\\u2013]\\s*([A-Z]{0,3}\\d[\\dA-Z.\\- ]{3,})\\s*$/);\n  if (tm) {\n    const cand = tm[1].trim().replace(/\\s+/g, '');\n    const digits = (cand.match(/\\d/g) || []).length;\n    const letters = (cand.match(/[A-Z]/g) || []).length;\n    if (digits >= 5 || (digits >= 4 && letters <= 3)) { tail = cand; out.add(tail); }\n  }\n\n  // 3) Sisipin dash. FIX: dulu hardcode 3 digit, jadi PUMA 39884687 -> \"39884-687\" (ngarang).\n  //    Yang bener \"398846-87\". Sekarang generate semua split yang mungkin; karena varian\n  //    dipakai sebagai SET buat exact-match, nambah kandidat itu gratis.\n  const splits = DASH_SPLIT[bKey] || [3, 2];\n  for (const v of [...out]) {\n    if (v.includes('-')) continue;\n    const d = v.replace(/[^A-Z0-9]/g, '');\n    if (/^\\d{7,9}$/.test(d) || /^[A-Z]{1,2}\\d{6,8}$/.test(d)) {\n      for (const n of splits) out.add(d.slice(0, -n) + '-' + d.slice(-n));\n    }\n  }\n\n  // Varian buat exact-match: cuma bentuk yang masuk akal sebagai style code pabrikan.\n  // Kode internal supplier (CCR11016001, 39884687) sengaja DIBUANG di sini — kalau ikut,\n  // dia bisa nyangkut di regex halaman dan bikin false positive \"verified 100\".\n  const variants = [...out].filter(v => v && looksLikeArticle(v));\n\n  const strong = stripped || tail || (looksLikeArticle(S) ? S : '');\n  const dashed = variants.find(v => v.includes('-') && v !== S) || '';\n\n  // article = HASIL DERIVASI, BOLEH KOSONG.\n  // Dulu di-fallback ke sku mentah -> query jadi \"CONVERSE CONA01887\", mustahil ketemu.\n  const article = dashed || strong || '';\n\n  return { variants, stripped, tail, article, has_article: !!article };\n}\n\n// Naikin URL gambar ke resolusi maksimum SEBELUM dikirim ke kie.ai.\n// Thumbnail 300px masuk -> hasil enhance jelek, dan tetep bayar.\n// Bonus: nyeragamin URL, jadi gambar sama beda param ukuran gak kehitung dua kali.\nfunction maxRes(u) {\n  if (!u) return '';\n  let s = String(u).trim();\n  if (/images\\.stockx\\.com/i.test(s)) s = s.split('?')[0] + '?fm=jpg&q=95&w=1400';\n  else if (/image\\.goat\\.com/i.test(s)) s = s.replace(/image\\.goat\\.com\\/\\d+\\//, 'image.goat.com/1500/').split('?')[0];\n  return s;\n}\n\n\nconst sd = $getWorkflowStaticData('global');\nconst key = 'run_' + $execution.id;\nsd[key] = sd[key] || { found: false, result: null, bestFallback: null, ts: Date.now() };\nconst st = sd[key];\n\n// o = metadata kandidat (url, tier, brand, model, sku_variants).\n// scrapeRes = respons scrape (HTML mentah). Jangan ketuker: input node ini datangnya\n// dari Candidate Scrape, jadi $input.first() itu HTML, bukan data kandidat.\nconst o = $('Check Already Found').first().json;\nconst scrapeRes = $input.first().json;\n\nfunction parseHtml(json) {\n  let obj = json;\n  if (typeof obj === 'string') return obj;\n  if (obj && typeof obj.data === 'string') {\n    const s = obj.data.trim();\n    if (s.startsWith('<')) return obj.data;\n    try { obj = JSON.parse(obj.data); } catch (e) { return obj.data; }\n  }\n  if (Array.isArray(obj) && obj[0]) return obj[0].content || obj[0].html || obj[0].raw || '';\n  if (obj && typeof obj.content === 'string') return obj.content;\n  if (obj && typeof obj.html === 'string') return obj.html;\n  if (obj && typeof obj.raw === 'string') return obj.raw;\n  return '';\n}\n\nlet raw = '';\ntry { raw = parseHtml(scrapeRes); } catch (e) {}\nraw = String(raw || '');\n\nlet product = null;\nconst ld = [...raw.matchAll(/<script[^>]+application\\/ld\\+json[^>]*>([\\s\\S]*?)<\\/script>/gi)];\nfor (const m of ld) {\n  try {\n    let data = JSON.parse(m[1].trim());\n    const arr = Array.isArray(data) ? data : (data['@graph'] || [data]);\n    for (const n of arr) { const t = n && n['@type']; if (t === 'Product' || (Array.isArray(t) && t.includes('Product'))) { product = n; break; } }\n  } catch (e) {}\n  if (product) break;\n}\n\nlet images = [], title = '', pageSku = '', desc = '';\nif (product) {\n  title = product.name || ''; pageSku = product.sku || product.mpn || '';\n  desc = typeof product.description === 'string' ? product.description : '';\n  const img = product.image;\n  if (Array.isArray(img)) images = img.map(x => typeof x === 'string' ? x : ((x && x.url) || '')).filter(Boolean);\n  else if (typeof img === 'string') images = [img];\n  else if (img && img.url) images = [img.url];\n}\nif (!title) { const m = raw.match(/<meta[^>]+property=[\"']og:title[\"'][^>]+content=[\"']([^\"']+)[\"']/i); if (m) title = m[1]; }\nif (!images.length) { images = [...raw.matchAll(/<meta[^>]+(?:property|name)=[\"']og:image[\"'][^>]+content=[\"']([^\"']+)[\"']/gi)].map(m => m[1]); }\nif (!images.length) {\n  const pats = [\n    /<img[^>]+(?:data-src|data-original|src)=[\"']([^\"']+(?:product|media|catalog|image|assets|dw\\/image)[^\"']*\\.(?:jpg|jpeg|png|webp))[^\"']*[\"']/gi,\n    /<img[^>]+srcset=[\"']([^\"'\\s,]+\\.(?:jpg|jpeg|png|webp))/gi\n  ];\n  const found = [];\n  for (const p of pats) { for (const m of raw.matchAll(p)) found.push(m[1]); }\n  images = [...new Set(found)];\n}\nimages = [...new Set(images.filter(Boolean))]\n  .filter(u => !/(logo|icon|sprite|placeholder|badge|flag|payment|banner|thumb_?nail_?small)/i.test(u))\n  .map(u => u.startsWith('//') ? ('https:' + u) : u)\n  .filter(u => /^https?:\\/\\//i.test(u))\n  .slice(0, 6);\n\nfunction normSku(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }\nfunction tok(v) { const stop = new Set(['adidas','asics','nike','reebok','puma','crocs','diadora','hoka','new','balance','men','women','unisex','original','shoes','shoe','sepatu']); return new Set(String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(t => t && !stop.has(t))); }\nfunction overlap(a, b) { const A = tok(a), B = tok(b); if (!A.size || !B.size) return 0; let i = 0; for (const t of A) { let m = B.has(t); if (!m) for (const u of B) { if (t.length >= 4 && u.length >= 4 && (t.includes(u) || u.includes(t))) { m = true; break; } } if (m) i++; } return i / Math.min(A.size, B.size); }\nfunction skuSegs(s) { return String(s || '').split(/[^0-9]+/).filter(x => x.length >= 2); }\nfunction skuRe(sku) { const s = skuSegs(sku); return s.length ? new RegExp(s.join('[^0-9]{0,10}')) : null; }\n\nconst variants = (Array.isArray(o.sku_variants) ? o.sku_variants : []).filter(Boolean);\nconst normRaw = normSku(raw);\nconst normPageSku = normSku(pageSku);\n\nlet skuExact = false, skuDigit = false;\nfor (const v of variants) { const tv = normSku(v); if (tv && (normPageSku.includes(tv) || normRaw.includes(tv))) { skuExact = true; break; } }\nif (!skuExact) {\n  // FIX: tes digit ke SELURUH HTML cuma boleh buat varian yang bentuknya beneran style code.\n  // Kode internal numerik (39884687) bisa nyangkut di product-id/harga/script -> dulu\n  // langsung dianggap \"verified, skor 100\" padahal halamannya produk lain.\n  for (const v of variants) {\n    if (!looksLikeArticle(v)) continue;\n    const re = skuRe(v);\n    if (re && (re.test(title) || re.test(pageSku) || re.test(raw))) { skuDigit = true; break; }\n  }\n}\nconst skuInPage = skuExact || skuDigit;\nconst titleScore = Math.round(overlap((o.brand || '') + ' ' + (o.model || o.title || ''), title || o.candidate_title) * 100);\nconst verified = (skuInPage || titleScore >= 40) && images.length >= 1;\n\nif (verified && !st.found) {\n  st.found = true;\n  st.result = {\n    source: 'local_crawl', tier: o.candidate_tier, matched_local_url: o.candidate_url,\n    title: title || o.candidate_title || '', description: desc,\n    identity_score: skuInPage ? 100 : titleScore,\n    sku_match_type: skuExact ? 'exact' : (skuDigit ? 'digits' : 'title'),\n    image_count: images.length, images,\n    image_lateral: images[0] || '', image_medial: images[1] || '',\n    image_top: images[2] || '', image_back: images[3] || '',\n    message: images.length + ' gambar dari ' + o.candidate_url + ' [' + o.candidate_tier + '] (skor ' + (skuInPage ? 100 : titleScore) + ')'\n  };\n}\n\nif (!st.found && images.length >= 1 && (o.candidate_tier === 'brand' || o.candidate_tier === 'retail') && titleScore >= 20) {\n  const prev = st.bestFallback ? st.bestFallback.cscore : -1;\n  if ((o.candidate_score || 0) > prev) {\n    st.bestFallback = {\n      cscore: o.candidate_score || 0, tier: o.candidate_tier, matched_local_url: o.candidate_url,\n      title: title || o.candidate_title || '', description: desc, identity_score: titleScore,\n      image_count: images.length, images,\n      image_lateral: images[0] || '', image_medial: images[1] || '',\n      image_top: images[2] || '', image_back: images[3] || '',\n      message: '(BELUM TERVERIFIKASI) ' + images.length + ' gambar dari ' + o.candidate_url + ' [' + o.candidate_tier + '] (title ' + titleScore + ')'\n    };\n  }\n}\n\nreturn [{ json: {\n  checked_url: o.candidate_url || '(NO URL)', tier: o.candidate_tier || '(NO TIER)', verified,\n  debug_title: title || o.candidate_title || '', debug_images: images.length, debug_raw_len: raw.length,\n  debug_variants: variants.join(','), debug_sku_in_page: skuInPage, debug_title_score: titleScore\n} }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-00000000000f",
+      "name": "Candidate Verify + Extract",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        300
+      ],
+      "notes": "ld+json Product -> og:image -> regex <img>. Cocokin artikel digate looksLikeArticle() biar product-id/harga gak jadi false positive."
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst sd = $getWorkflowStaticData('global');\nconst key = 'run_' + $execution.id;\nconst st = sd[key] || { found: false, result: null, bestFallback: null };\nconst row = $('Loop Over Rows').first().json;\n\nlet rc = {};\ntry { rc = $('Rank Candidates').first().json || {}; } catch (e) {}\n\nconst r = st.found ? (st.result || {}) : {};\nconst fb = st.bestFallback || null;\n\nlet link1 = '', link2 = '';\n\nif (st.found) {\n  link1 = r.matched_local_url || '';\n  if (fb && fb.matched_local_url && fb.matched_local_url !== link1) link2 = fb.matched_local_url;\n} else if (fb) {\n  // Gak ada yang lolos verifikasi tapi ada halaman yang masuk akal + ada gambarnya.\n  // Tetap disetor: yang ngecek berikutnya mata creative, bukan API berbayar.\n  link1 = fb.matched_local_url || '';\n} else {\n  link1 = 'NOT FOUND - '\n    + (rc.article ? ('artikel ' + rc.article) : 'artikel kosong')\n    + (rc.spider_error ? (' | spider_error: ' + String(rc.spider_error).slice(0, 80)) : '')\n    + ' | ' + new Date().toISOString().slice(0, 10);\n}\n\ndelete sd[key];\n\nreturn [{ json: {\n  row_number: row.row_number,\n  'Link Recommendation 1': link1,\n  'Link Recommendation 2': link2\n} }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000010",
+      "name": "Aggregate Links",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst o = $input.first().json;\nconst row = $('Loop Over Rows').first().json;\n\nconst sebab = o.has_query === false\n  ? 'brand/artikel/nama kosong semua'\n  : (o.no_candidates\n      ? ('spider gak ngasih kandidat'\n         + (o.spider_error ? (' | spider_error: ' + String(o.spider_error).slice(0, 80)) : ''))\n      : 'berhenti sebelum ada kandidat');\n\nreturn [{ json: {\n  row_number: row.row_number,\n  'Link Recommendation 1': 'NOT FOUND - ' + sebab + ' | ' + new Date().toISOString().slice(0, 10),\n  'Link Recommendation 2': ''\n} }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000011",
+      "name": "Dead End",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        560
+      ],
+      "notes": "Tetap nulis not_found ke Sheet. Kalau barisnya dibiarin kosong, run berikutnya bayar lagi buat hasil yang sama."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1rYb5KTgiwnMYhmCutuyMzZkKywSWsIVM_hlwfKK7Leo",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "1117001467",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "row_number"
+          ],
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "a1000000-0000-4000-8000-000000000012",
+      "name": "Write Result",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1900,
+        140
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "Update by row_number. Kolom brand/model/sku ikut ketulis ulang dengan nilai yang sama - aman."
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\nlet ketemu = 0, gagal = 0, dua = 0;\nfor (const it of items) {\n  const l1 = String((it.json && it.json['Link Recommendation 1']) || '');\n  const l2 = String((it.json && it.json['Link Recommendation 2']) || '');\n  if (!l1 || l1.indexOf('NOT FOUND') === 0) gagal++; else ketemu++;\n  if (l2) dua++;\n}\nreturn [{ json: {\n  total_baris: items.length,\n  ketemu, gagal, dapat_2_link: dua,\n  message: 'Run selesai: ' + items.length + ' baris | ketemu ' + ketemu\n    + ' | gagal ' + gagal + ' | dapat 2 link ' + dua\n} }];\n"
+      },
+      "id": "a1000000-0000-4000-8000-000000000013",
+      "name": "Run Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        180
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Pending": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Rows": {
+      "main": [
+        [
+          {
+            "node": "Run Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Search": {
+      "main": [
+        [
+          {
+            "node": "Has Query?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Query?": {
+      "main": [
+        [
+          {
+            "node": "Split Search Batch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dead End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Search Batch": {
+      "main": [
+        [
+          {
+            "node": "Spider Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spider Search": {
+      "main": [
+        [
+          {
+            "node": "Rank Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Candidates": {
+      "main": [
+        [
+          {
+            "node": "Has Candidates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Candidates?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dead End",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Candidates": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Links",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Already Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Already Found": {
+      "main": [
+        [
+          {
+            "node": "Scrape Kandidat Ini?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Kandidat Ini?": {
+      "main": [
+        [
+          {
+            "node": "Candidate Scrape",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Candidate Scrape": {
+      "main": [
+        [
+          {
+            "node": "Candidate Verify + Extract",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Candidate Verify + Extract": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Links": {
+      "main": [
+        [
+          {
+            "node": "Write Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dead End": {
+      "main": [
+        [
+          {
+            "node": "Write Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
