@@ -112,16 +112,60 @@ const pisah = artDash || artSplit;
 const base = [brand, model].filter(Boolean).join(' ').trim();
 const hasQuery = !!(codes.length || base);
 
-// Query dibangun dari kode + nama. TANPA "site:" — nguncinya ke domain tebakan
-// justru yang bikin barang gak ketemu. Biar mesin cari yang nemuin domainnya,
-// verifikasi kode di halaman yang mutusin sah apa nggak.
-// country_code juga gak diisi: kodenya global.
+// ===== Domain resmi brand: DICARI, bukan ditebak =====
+// Kenyataan yang dites langsung ke spider: tanpa "site:", halaman skechers.id
+// GAK PERNAH muncul — ketimbun skechers.com global. Dengan "site:skechers.id"
+// halamannya langsung ketemu, jadi halamannya keindeks, cuma tenggelam.
+// country_code:'id' udah dites dan TIDAK nolong (hasilnya tetap global).
+//
+// Jadi "site:" tetap dibutuhin. Yang salah dulu bukan "site:"-nya, tapi domainnya
+// gua tebak dari pola ".co.id" (skechers.co.id gak ada; yang bener skechers.id).
+// Sekarang domainnya dicari sekali per brand, hasilnya disimpen di memori workflow.
+const sdb = $getWorkflowStaticData('global');
+sdb.brandDomains = sdb.brandDomains || {};
+const bkey = brand.toUpperCase();
+
+if (brand && !sdb.brandDomains[bkey]) {
+  const tokens = brand.toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 4);
+  const found = [];
+  try {
+    const res = await this.helpers.httpRequest({
+      method: 'POST',
+      url: 'https://api.spider.cloud/search',
+      headers: { 'Authorization': 'Bearer SPIDER_API_KEY_DISINI', 'Content-Type': 'application/json' },
+      body: { search: brand + ' official site indonesia', search_limit: 6, fetch_page_content: false },
+      json: true,
+      timeout: 45000
+    });
+    const arr = (res && (res.content || res.results)) || (Array.isArray(res) ? res : []);
+    for (const r of arr) {
+      const m = String((r && (r.url || r.link)) || '').match(/^https?:\\/\\/([^\\/?#]+)/i);
+      if (!m) continue;
+      const h = m[1].replace(/^www\\./, '').toLowerCase();
+      // Iklan mesin cari & marketplace bukan situs brand.
+      if (/duckduckgo|bing\\.com|google\\./.test(h)) continue;
+      if (/shopee|tokopedia|lazada|blibli|bukalapak|amazon|ebay|aliexpress/.test(h)) continue;
+      // Host harus ngandung nama brand -> itu tanda situs resmi/afiliasi resmi.
+      // "hoka one one" -> token "hoka" -> hoka.com & hokastoreindonesia.com kena.
+      if (!tokens.some(t => h.indexOf(t) !== -1)) continue;
+      if (found.indexOf(h) === -1) found.push(h);
+    }
+  } catch (e) { /* gagal nyari domain jangan matiin baris ini */ }
+  sdb.brandDomains[bkey] = found.slice(0, 3);
+}
+const BRAND_SITES = (brand && sdb.brandDomains[bkey]) || [];
+
+// Query: kode polos + nama, plus kode di situs brand yang BARUSAN DITEMUIN.
+// country_code sengaja gak diisi (udah dites, gak ngefek).
 const batch = [];
 for (const c of codes) {
   batch.push({ search: [brand, c].filter(Boolean).join(' ').trim(), search_limit: 10 });
 }
 if (pisah) batch.push({ search: [brand, pisah].filter(Boolean).join(' ').trim(), search_limit: 10 });
 if (base) batch.push({ search: base, search_limit: 10 });
+for (const bs of BRAND_SITES) {
+  batch.push({ search: (codes[0] || model) + ' site:' + bs, search_limit: 6 });
+}
 
 // sku_variants dipakai Candidate Verify buat exact-match. Semua bentuk kode ikut,
 // termasuk GENERIC — pencocokannya normalisasi (buang non-alfanumerik) di kedua
@@ -136,7 +180,7 @@ return [{ json: {
   article_codes: codes,
   // Dikosongin dengan sengaja. Dulu ini daftar domain brand hasil tebakan dan dia
   // yang nyetir peringkat — salah tebak domain = brand itu gak pernah ketemu.
-  brand_sites: [],
+  brand_sites: BRAND_SITES,
   // Yang dicari LINK, bukan bahan buat kie.ai — jadi sumber gak harus situs resmi
   // brand. Marketplace dibolehin karena justru dia yang paling lengkap nyimpen tiap
   // colorway (link manual yang udah ada pun dari Yahoo Shopping Taiwan).
