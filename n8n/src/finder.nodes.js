@@ -64,7 +64,18 @@ if (!model) model = rawModel;
 
 const BRAND_SITES = brandSites(brand);
 
+// Artikel sering ditulis "model + kode warna" nempel jadi satu: 150802NAT.
+// Situs brand nulisnya KEPISAH — Skechers: 150802_NAT. Mesin cari nganggep
+// "150802NAT" satu token dan cuma mulangin halaman model yang paling populer
+// (150802_BBK), bukan warna yang dicari. Jadi bentuk terpisahnya ikut dicariin.
+// Pencocokannya sendiri gak perlu diapa-apain: normSku buang underscore/spasi,
+// jadi "150802_NAT" di halaman tetap kena sama varian "150802NAT".
+let artSplit = '';
+const am = article.match(/^(\\d{4,8})([A-Z]{2,6})$/);
+if (am) artSplit = am[1] + ' ' + am[2];
+
 const artQuery = article ? [brand, article].filter(Boolean).join(' ').trim() : '';
+const artQuerySplit = artSplit ? [brand, artSplit].filter(Boolean).join(' ').trim() : '';
 const base = [brand, model].filter(Boolean).join(' ').trim();
 const hasQuery = !!(artQuery || base);
 
@@ -72,9 +83,11 @@ const hasQuery = !!(artQuery || base);
 // dipakai manual malah dari toko Taiwan. Ngunci ke 'id' bikin hasil kesempitan.
 const batch = [];
 if (artQuery) batch.push({ search: artQuery, search_limit: 10 });
+if (artQuerySplit) batch.push({ search: artQuerySplit, search_limit: 10 });
 if (base && base !== artQuery) batch.push({ search: base, search_limit: 10 });
+// Di situs brand sendiri, bentuk terpisah yang paling sering nyantol.
 for (const bs of BRAND_SITES) {
-  batch.push({ search: (artQuery || base) + ' site:' + bs, search_limit: 5 });
+  batch.push({ search: (artSplit || article || model) + ' site:' + bs, search_limit: 5 });
 }
 
 // sku_variants dipakai Candidate Verify buat exact-match. Cukup artikel apa adanya:
