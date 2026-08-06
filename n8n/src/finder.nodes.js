@@ -1,169 +1,179 @@
 // Source Code node buat workflow Article Image Finder (03-article-image-finder.json).
 //
-// Bedanya sama 02-local-crawl.json: workflow ini BERDIRI SENDIRI (bukan subworkflow
-// yang dipanggil MAIN) dan berhenti di link — TIDAK ada step kie.ai. Creative yang
-// ngedit gambarnya sendiri, jadi kita cuma perlu nyetor link gambar + link halaman
-// sumbernya balik ke Sheet.
+// Beda sama 02-local-crawl.json:
+// 1. Berdiri sendiri, bukan subworkflow yang dipanggil MAIN.
+// 2. Berhenti di link — TIDAK ada step kie.ai. Creative ngedit gambarnya sendiri.
+// 3. TIDAK pakai deriveVariants(). Sheet sumbernya udah punya kolom ARTIKEL yang
+//    bersih (11C056400, 208188001), jadi gak ada yang perlu diturunin dari SKU.
+//    Nurunin ulang cuma nambah jalan buat salah.
 //
-// Node Build Search / Rank Candidates / Check Already Found / Candidate Verify
-// TIDAK diduplikat di sini — build.js narik langsung dari src/local.nodes.js biar
-// gak drift lagi (pelajaran dari MAIN vs Local Crawl yang dulu punya salinan sendiri).
+// Node Rank Candidates / Check Already Found / Candidate Verify TIDAK diduplikat —
+// build.js narik langsung dari src/local.nodes.js. Duplikasi persis itu yang dulu
+// bikin MAIN dan Local Crawl drift.
+//
+// Kolom sheet (persis, spasi & huruf besar berpengaruh):
+//   baca : BRAND | ARTIKEL | SKU NAME | KETERANGAN | Link Recommendation 1
+//   tulis: Link Recommendation 1 | Link Recommendation 2
 
-// Baris mana yang diproses. Sheet dipakai bareng creative, jadi jangan asal embat
-// semua baris: yang udah 'found' bakal ke-scrape ulang dan itu bayar lagi.
+// Baris mana yang diproses. Tiap scrape spider itu bayar, jadi guard-nya ketat.
 exports.filterPending = `
-const OK_STATUS = ['', 'pending', 'retry'];
-
 const out = [];
 for (const it of $input.all()) {
   const r = it.json || {};
-  const status = String(r.status || '').trim().toLowerCase();
-  if (OK_STATUS.indexOf(status) === -1) continue;
 
-  // Minimal harus ada sesuatu buat dicari. Baris kosong di ekor sheet ikut kebaca
-  // sama node Google Sheets, dan tanpa guard ini dia jadi query kosong ke spider.
-  const brand = String(r.brand || '').trim();
-  const sku = String(r.sku || '').trim();
-  const model = String(r.model || '').trim();
-  if (!brand && !sku && !model) continue;
+  const brand = String(r['BRAND'] || '').trim();
+  const article = String(r['ARTIKEL'] || '').trim().toUpperCase();
+  const model = String(r['SKU NAME'] || '').trim();
+  const link1 = String(r['Link Recommendation 1'] || '').trim();
+  const ket = String(r['KETERANGAN'] || '').trim().toUpperCase();
 
-  out.push({ json: Object.assign({}, r, { brand, sku, model }) });
+  // Udah ada linknya (atau udah ditandai NOT FOUND run sebelumnya) -> lewat.
+  // Mau dicari ulang? kosongin selnya di sheet.
+  if (link1) continue;
+
+  // Asetnya udah ada di Drive, gak usah dicariin.
+  if (ket.indexOf('GDRIVE') !== -1) continue;
+
+  // Tanpa artikel DAN tanpa nama, gak ada yang bisa dicari.
+  if (!article && !model) continue;
+
+  out.push({ json: { row_number: r.row_number, brand, article, model } });
 }
-
 return out;
 `;
 
-// search_batch dari Build Search itu array. HTTP Request node jalan per-item, jadi
-// array-nya dipecah dulu. country_code & search_limit ikut dari Build Search, jangan
-// dihardcode ulang di node HTTP-nya.
+// Bangun query. Nyontek cara manusia nge-Google: kode artikel duluan, baru nama.
+exports.buildSearchArtikel = `
+{{BRANDS}}
+
+const o = $input.first().json;
+const brand = String(o.brand || '').trim();
+const article = String(o.article || '').trim().toUpperCase();
+const rawModel = String(o.model || '').trim();
+
+// Bersihin nama: buang kode artikel di ekor ("... - 11C056400"), filler Indonesia,
+// dan nama brand yang dobel. Sisanya baru kepake sebagai keyword cadangan.
+let model = rawModel.replace(/[-\\u2013]\\s*[A-Z]{0,3}\\d[\\dA-Z.\\- ]{3,}\\s*$/i, '').trim();
+const FILLER = /\\b(sepatu|sandal|lari|running|jalan|wanita|women|womens|pria|men|mens|unisex|anak|kids|original|terbaru|new|size|ukuran|no|nomor|casual|sneakers|sneaker)\\b/gi;
+model = model.replace(FILLER, ' ').replace(/\\s{2,}/g, ' ').trim();
+if (brand) {
+  const br = new RegExp('\\\\b' + brand.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&') + '\\\\b', 'gi');
+  model = model.replace(br, ' ').replace(/\\s{2,}/g, ' ').trim();
+}
+if (!model) model = rawModel;
+
+const BRAND_SITES = brandSites(brand);
+
+const artQuery = article ? [brand, article].filter(Boolean).join(' ').trim() : '';
+const base = [brand, model].filter(Boolean).join(' ').trim();
+const hasQuery = !!(artQuery || base);
+
+// country_code SENGAJA gak diisi. Kode artikel itu global — link yang selama ini
+// dipakai manual malah dari toko Taiwan. Ngunci ke 'id' bikin hasil kesempitan.
+const batch = [];
+if (artQuery) batch.push({ search: artQuery, search_limit: 10 });
+if (base && base !== artQuery) batch.push({ search: base, search_limit: 10 });
+for (const bs of BRAND_SITES) {
+  batch.push({ search: (artQuery || base) + ' site:' + bs, search_limit: 5 });
+}
+
+// sku_variants dipakai Candidate Verify buat exact-match. Cukup artikel apa adanya:
+// pencocokannya normalisasi (buang non-alfanumerik) di kedua sisi, jadi "208188-001"
+// di halaman tetap kena sama varian "208188001". Gak perlu bikin varian dash.
+return [{ json: {
+  row_number: o.row_number,
+  brand, model, sku: article,
+  base, article, has_article: !!article,
+  sku_variants: article ? [article] : [],
+  has_query: hasQuery,
+  brand_sites: BRAND_SITES,
+  search_batch: batch
+} }];
+`;
+
+// search_batch itu array; HTTP Request jalan per-item, jadi dipecah dulu.
 exports.splitSearchBatch = `
 const o = $input.first().json;
 const batch = Array.isArray(o.search_batch) ? o.search_batch : [];
 if (!batch.length) return [];
-return batch.map(b => ({ json: {
-  search: b.search,
-  search_limit: b.search_limit,
-  country_code: b.country_code
-} }));
+return batch.map(b => ({ json: { search: b.search, search_limit: b.search_limit } }));
 `;
 
-// Pengganti aggregateLocal. Dua beda penting:
-// 1. Sumber baris asli = 'Loop Over Rows' (workflow ini bukan subworkflow, jadi gak ada
-//    node 'When Executed by Another Workflow').
-// 2. Output-nya kolom link buat Sheet, bukan payload buat pipeline gambar berbayar.
+// Rakit hasil jadi 2 kolom link halaman produk.
+// Rec 1 = kandidat terverifikasi (artikel kecocokan di halaman, atau judul >= 40%).
+// Rec 2 = runner-up yang ke-rekam SEBELUM yang pertama ketemu. Sering kosong, dan itu
+// wajar: begitu ada yang verified, sisa kandidat sengaja gak di-scrape biar gak bayar.
 exports.aggregateLinks = `
 const sd = $getWorkflowStaticData('global');
 const key = 'run_' + $execution.id;
 const st = sd[key] || { found: false, result: null, bestFallback: null };
-const o = $('Loop Over Rows').first().json;
+const row = $('Loop Over Rows').first().json;
 
 let rc = {};
 try { rc = $('Rank Candidates').first().json || {}; } catch (e) {}
 
-// Jejak kandidat yang kececk, buat QC pas hasilnya kosong. Di dalam loop, .all()
-// cuma ngasih eksekusi terakhir — ini emang diagnostik kasar, bukan audit lengkap.
-let probes = [];
-try {
-  probes = $('Candidate Verify + Extract').all().map(i => i.json).map(d =>
-    (d.checked_url || '?').replace(/^https?:\\/\\//, '').slice(0, 40)
-    + ' [raw:' + (d.debug_raw_len || 0) + ' img:' + (d.debug_images || 0)
-    + ' sku:' + (d.debug_sku_in_page ? 'Y' : 'N') + ' title:' + (d.debug_title_score || 0) + ']'
-  );
-} catch (e) {}
-
+const r = st.found ? (st.result || {}) : {};
 const fb = st.bestFallback || null;
-let status, r, message;
+
+let link1 = '', link2 = '';
 
 if (st.found) {
-  status = 'found';
-  r = st.result || {};
-  message = r.message || '';
+  link1 = r.matched_local_url || '';
+  if (fb && fb.matched_local_url && fb.matched_local_url !== link1) link2 = fb.matched_local_url;
 } else if (fb) {
-  // Beda sama versi kie.ai: di sana kandidat belum terverifikasi DIBUANG karena
-  // step berikutnya bayar. Di sini step berikutnya cuma mata creative, jadi link-nya
-  // tetap disetor — cukup ditandai biar dicek manual dulu.
-  status = 'review_manual';
-  r = fb;
-  message = 'BELUM TERVERIFIKASI, cek dulu sebelum dipakai: ' + fb.matched_local_url
-    + ' [' + fb.tier + '] (' + fb.image_count + ' gambar, title ' + fb.identity_score + ')';
+  // Gak ada yang lolos verifikasi tapi ada halaman yang masuk akal + ada gambarnya.
+  // Tetap disetor: yang ngecek berikutnya mata creative, bukan API berbayar.
+  link1 = fb.matched_local_url || '';
 } else {
-  status = 'not_found';
-  r = {};
-  message = 'Tidak ketemu: ' + (o.brand || '') + ' ' + (o.model || o.sku || '')
-    + (rc.article ? (' | artikel: ' + rc.article) : ' | ARTIKEL GAK KETURUNAN dari sku ' + (o.sku || ''))
-    + (rc.spider_error ? (' | spider_error: ' + rc.spider_error) : '')
-    + (probes.length ? (' | dicek: ' + probes.join(' ; ')) : ' | TIDAK ADA KANDIDAT dari spider');
+  link1 = 'NOT FOUND - '
+    + (rc.article ? ('artikel ' + rc.article) : 'artikel kosong')
+    + (rc.spider_error ? (' | spider_error: ' + String(rc.spider_error).slice(0, 80)) : '')
+    + ' | ' + new Date().toISOString().slice(0, 10);
 }
 
 delete sd[key];
 
-const imgs = Array.isArray(r.images) ? r.images : [];
-
 return [{ json: {
-  row_number: o.row_number,
-  brand: o.brand || '',
-  model: o.model || '',
-  sku: o.sku || '',
-  status,
-  article: rc.article || '',
-  source_url: r.matched_local_url || '',
-  source_tier: r.tier || '',
-  found_title: r.title || '',
-  identity_score: r.identity_score || 0,
-  image_count: imgs.length,
-  image_1: imgs[0] || '',
-  image_2: imgs[1] || '',
-  image_3: imgs[2] || '',
-  image_4: imgs[3] || '',
-  image_5: imgs[4] || '',
-  checked_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
-  message
+  row_number: row.row_number,
+  'Link Recommendation 1': link1,
+  'Link Recommendation 2': link2
 } }];
 `;
 
-// Jalur buntu sebelum spider sempat ngasih kandidat: gak ada query sama sekali, atau
-// spider balik kosong. Tetap WAJIB nulis ke Sheet — kalau barisnya dibiarin kosong,
-// run berikutnya ngambil dia lagi dan bayar lagi buat hasil yang sama.
+// Jalur buntu sebelum spider sempat ngasih kandidat. TETAP nulis ke sheet — kalau
+// selnya dibiarin kosong, run berikutnya ngambil baris ini lagi dan bayar lagi buat
+// hasil yang sama.
 exports.deadEnd = `
 const o = $input.first().json;
 const row = $('Loop Over Rows').first().json;
 
-const reason = o.has_query === false
-  ? 'Gak ada query yang bisa dibentuk dari brand/model/sku baris ini'
+const sebab = o.has_query === false
+  ? 'brand/artikel/nama kosong semua'
   : (o.no_candidates
-      ? ('Spider gak ngasih kandidat'
-         + (o.spider_error ? (' | spider_error: ' + o.spider_error) : '')
-         + (Array.isArray(o.debug_domains) && o.debug_domains.length
-            ? (' | domain kebaca: ' + o.debug_domains.slice(0, 8).join(', '))
-            : ''))
-      : 'Berhenti sebelum ada kandidat');
+      ? ('spider gak ngasih kandidat'
+         + (o.spider_error ? (' | spider_error: ' + String(o.spider_error).slice(0, 80)) : ''))
+      : 'berhenti sebelum ada kandidat');
 
 return [{ json: {
   row_number: row.row_number,
-  brand: row.brand || '',
-  model: row.model || '',
-  sku: row.sku || '',
-  status: 'not_found',
-  article: o.article || '',
-  source_url: '', source_tier: '', found_title: '',
-  identity_score: 0, image_count: 0,
-  image_1: '', image_2: '', image_3: '', image_4: '', image_5: '',
-  checked_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
-  message: reason
+  'Link Recommendation 1': 'NOT FOUND - ' + sebab + ' | ' + new Date().toISOString().slice(0, 10),
+  'Link Recommendation 2': ''
 } }];
 `;
 
 exports.runSummary = `
 const items = $input.all();
-const counts = {};
+let ketemu = 0, gagal = 0, dua = 0;
 for (const it of items) {
-  const s = (it.json && it.json.status) || 'unknown';
-  counts[s] = (counts[s] || 0) + 1;
+  const l1 = String((it.json && it.json['Link Recommendation 1']) || '');
+  const l2 = String((it.json && it.json['Link Recommendation 2']) || '');
+  if (!l1 || l1.indexOf('NOT FOUND') === 0) gagal++; else ketemu++;
+  if (l2) dua++;
 }
-const breakdown = Object.keys(counts).map(k => k + ': ' + counts[k]).join(', ');
 return [{ json: {
-  total_rows: items.length,
-  breakdown: counts,
-  message: 'Run selesai: ' + items.length + ' baris diproses | ' + (breakdown || 'tidak ada detail status')
+  total_baris: items.length,
+  ketemu, gagal, dapat_2_link: dua,
+  message: 'Run selesai: ' + items.length + ' baris | ketemu ' + ketemu
+    + ' | gagal ' + gagal + ' | dapat 2 link ' + dua
 } }];
 `;

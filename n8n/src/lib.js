@@ -82,3 +82,35 @@ function maxRes(u) {
   return s;
 }
 `;
+
+// PERHATIAN: maxRes() di atas ada DI DALAM template literal deriveVariants — literal
+// itu baru ketutup di baris tepat sebelum blok ini. Nambah export baru HARUS di sini,
+// di luar backtick. Nyisipin di tengah bikin string-nya kepotong dan semua Code node
+// yang pakai {{LIB}} rusak.
+
+// Daftar situs resmi per brand: buat query "site:" dan buat naikin skor domain di
+// Rank Candidates. Ditaruh di lib biar workflow baru gak bikin salinan sendiri —
+// persis kesalahan yang bikin MAIN dan Local Crawl drift dulu.
+// CATATAN: src/local.nodes.js masih punya salinan lamanya (inline di buildSearch).
+// Belum disatuin karena workflow itu lagi jalan dan bayar; migrasi nyusul.
+exports.brandSites = `
+const BRAND_MAP = {
+  adidas:['adidas.co.id','adidas.com'], nike:['nike.com'], puma:['puma.com','id.puma.com'],
+  reebok:['reebok.com'], asics:['asics.com'], newbalance:['newbalance.co.id','newbalance.com'],
+  converse:['converse.co.id','converse.com'], vans:['vans.co.id','vans.com'],
+  diadora:['diadora.co.id','diadora.com'],
+  // "HOKA ONE ONE" di sheet -> key jadi 'hokaoneone'. Tanpa alias ini dia nebak
+  // hokaoneone.com yang bukan situs mereka.
+  hoka:['hoka.com'], hokaoneone:['hoka.com'],
+  on:['on.com','on-running.com'], onrunning:['on.com','on-running.com'], oncloud:['on.com','on-running.com'],
+  crocs:['crocs.co.id','crocs.com'], fila:['fila.co.id','fila.com'], skechers:['skechers.com','skechers.co.id'],
+  underarmour:['underarmour.com'], saucony:['saucony.com'], ortuseight:['ortuseight.com'], mizuno:['mizuno.com'],
+  airjordan:['nike.com'], jordan:['nike.com']
+};
+
+function brandSites(brand) {
+  const k = String(brand || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (BRAND_MAP[k]) return BRAND_MAP[k];
+  return k ? [k + '.com', k + '.co.id'] : [];
+}
+`;

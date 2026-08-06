@@ -11,8 +11,8 @@
     },
     {
       "parameters": {
-        "documentId": { "__rl": true, "value": "SPREADSHEET_ID_DISINI", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "SHEET_NAME_DISINI", "mode": "name" },
+        "documentId": { "__rl": true, "value": "1rYb5KTgiwnMYhmCutuyMzZkKywSWsIVM_hlwfKK7Leo", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "1117001467", "mode": "id" },
         "options": {}
       },
       "id": "a1000000-0000-4000-8000-000000000002",
@@ -39,13 +39,13 @@
       "notes": "batchSize WAJIB 1 - Build Search & Aggregate Links pakai $('Loop Over Rows').first()"
     },
     {
-      "parameters": { "jsCode": "{{CODE:local.buildSearch}}" },
+      "parameters": { "jsCode": "{{CODE:finder.buildSearchArtikel}}" },
       "id": "a1000000-0000-4000-8000-000000000005",
       "name": "Build Search",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [20, 420],
-      "notes": "deriveVariants() dari src/lib.js: sku internal -> kode artikel pabrikan"
+      "notes": "Pakai kolom ARTIKEL apa adanya. TIDAK pakai deriveVariants - artikel di sheet ini udah bersih."
     },
     {
       "parameters": {
@@ -233,8 +233,8 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": { "__rl": true, "value": "SPREADSHEET_ID_DISINI", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "SHEET_NAME_DISINI", "mode": "name" },
+        "documentId": { "__rl": true, "value": "1rYb5KTgiwnMYhmCutuyMzZkKywSWsIVM_hlwfKK7Leo", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "1117001467", "mode": "id" },
         "columns": {
           "mappingMode": "autoMapInputData",
           "matchingColumns": ["row_number"],

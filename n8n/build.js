@@ -47,7 +47,9 @@ function resolveCode(ref) {
     throw new Error(`src/${ns}.nodes.js gak punya export "${name}" (ada: ${Object.keys(NS[ns]).join(', ')})`);
   }
 
-  return code.split('{{LIB}}').join(lib.deriveVariants);
+  return code
+    .split('{{LIB}}').join(lib.deriveVariants)
+    .split('{{BRANDS}}').join(lib.brandSites);
 }
 
 function build(file) {
