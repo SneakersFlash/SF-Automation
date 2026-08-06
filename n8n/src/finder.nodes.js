@@ -26,6 +26,7 @@ for (const it of $input.all()) {
   const model = String(r['SKU NAME'] || '').trim();
   const link1 = String(r['Link Recommendation 1'] || '').trim();
   const ket = String(r['KETERANGAN'] || '').trim().toUpperCase();
+  const generic = String(r['GENERIC'] || '').trim();
 
   // Udah ada linknya (atau udah ditandai NOT FOUND run sebelumnya) -> lewat.
   // Mau dicari ulang? kosongin selnya di sheet.
@@ -37,7 +38,7 @@ for (const it of $input.all()) {
   // Tanpa artikel DAN tanpa nama, gak ada yang bisa dicari.
   if (!article && !model) continue;
 
-  out.push({ json: { row_number: r.row_number, brand, article, model } });
+  out.push({ json: { row_number: r.row_number, brand, article, model, generic } });
 }
 return out;
 `;
@@ -74,8 +75,26 @@ let artSplit = '';
 const am = article.match(/^(\\d{4,8})([A-Z]{2,6})$/);
 if (am) artSplit = am[1] + ' ' + am[2];
 
+// Kolom GENERIC itu kode internal (prefix brand + artikel) — buat query GAK boleh
+// dipakai mentah, "SKE150802NAT" gak dikenal situs manapun. TAPI di 19 dari 316
+// baris dia nyimpen DASH yang hilang di ARTIKEL: PUMA 19551516 -> 195515-16,
+// CROCS 100015CI -> 10001-5CI. Titik pisah itu yang dipakai situs brand, dan buat
+// PUMA (angka semua) tebakan regex di atas gak bisa nemuin sendiri.
+// Prefix brand-nya dikupas 0-4 huruf, dan cuma diterima kalau sisanya (dash dibuang)
+// PERSIS sama dengan ARTIKEL — biar kode internal gak nyelinap jadi query.
+let artDash = '';
+const gen = String(o.generic || '').trim().toUpperCase();
+if (article && gen.indexOf('-') !== -1) {
+  for (let p = 0; p <= 4; p++) {
+    const tail = gen.slice(p);
+    if (tail.indexOf('-') !== -1 && tail.replace(/-/g, '') === article) { artDash = tail; break; }
+  }
+}
+
 const artQuery = article ? [brand, article].filter(Boolean).join(' ').trim() : '';
-const artQuerySplit = artSplit ? [brand, artSplit].filter(Boolean).join(' ').trim() : '';
+// artDash lebih dipercaya dari artSplit: itu data, bukan tebakan pola.
+const pisah = artDash || artSplit;
+const artQuerySplit = pisah ? [brand, pisah].filter(Boolean).join(' ').trim() : '';
 const base = [brand, model].filter(Boolean).join(' ').trim();
 const hasQuery = !!(artQuery || base);
 
@@ -87,7 +106,7 @@ if (artQuerySplit) batch.push({ search: artQuerySplit, search_limit: 10 });
 if (base && base !== artQuery) batch.push({ search: base, search_limit: 10 });
 // Di situs brand sendiri, bentuk terpisah yang paling sering nyantol.
 for (const bs of BRAND_SITES) {
-  batch.push({ search: (artSplit || article || model) + ' site:' + bs, search_limit: 5 });
+  batch.push({ search: (pisah || article || model) + ' site:' + bs, search_limit: 5 });
 }
 
 // sku_variants dipakai Candidate Verify buat exact-match. Cukup artikel apa adanya:
