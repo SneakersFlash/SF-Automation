@@ -114,6 +114,22 @@ const MARKETPLACE = ['ebay.com','carousell.com','olx.co.id','olx.com','lazada.co
 const JUNK = o.allow_marketplace ? JUNK_BASE : JUNK_BASE.concat(MARKETPLACE);
 const LISTING = /(\\/search|\\/cari|\\?q=|\\/category\\/|\\/kategori\\/|\\/c\\/|catalogsearch|\\/collections\\/?$|\\/brand\\/|\\/sale\\/?$)/i;
 
+// Subdomain yang bukan toko: store locator, karier, bantuan, blog korporat.
+// local.skechers.com lolos inList() karena endsWith('.skechers.com') -> dapet skor
+// brand 1.0 dan nangkring di peringkat 1, padahal itu halaman cari-toko.
+const NONPRODUCT_SUB = /^(local|locator|stores?|maps?|careers?|jobs|investors?|corporate|support|help|faq|blog|news|press|about)\\./i;
+
+// Halaman depan / path terlalu pendek gak mungkin halaman produk. Tanpa cek ini,
+// "https://local.skechers.com/" lolos semua filter dan bisa jadi jawaban.
+function pathOf(u) {
+  const m = String(u || '').match(/^https?:\\/\\/[^\\/?#]+([^?#]*)/i);
+  return (m && m[1] ? m[1] : '/').replace(/\\/+$/, '');
+}
+function tooShallow(u) {
+  const p = pathOf(u);
+  return p.replace(/^\\//, '').length < 8;
+}
+
 function host(u) { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; }
 // exact match / subdomain saja — includes() dulu bikin 'amazon.com' ketembak sebagai brand-site 'on.com'
 function inList(h, list) { return list.some(d => h === d || h.endsWith('.' + d)); }
@@ -128,6 +144,8 @@ for (const r of raw) {
   debugSeen.push(h);
   if (inList(h, JUNK)) continue;
   if (LISTING.test(url)) continue;
+  if (NONPRODUCT_SUB.test(h)) continue;
+  if (tooShallow(url)) continue;
 
   let tier = 'other', domainScore = 0.45;
   if (inList(h, brand_sites)) { tier = 'brand'; domainScore = 1.0; }
