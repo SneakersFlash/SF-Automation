@@ -45,7 +45,6 @@ return out;
 
 // Bangun query. Nyontek cara manusia nge-Google: kode artikel duluan, baru nama.
 exports.buildSearchArtikel = `
-{{BRANDS}}
 
 const o = $input.first().json;
 const brand = String(o.brand || '').trim();
@@ -63,7 +62,6 @@ if (brand) {
 }
 if (!model) model = rawModel;
 
-const BRAND_SITES = brandSites(brand);
 
 // Artikel sering ditulis "model + kode warna" nempel jadi satu: 150802NAT.
 // Situs brand nulisnya KEPISAH — Skechers: 150802_NAT. Mesin cari nganggep
@@ -91,32 +89,54 @@ if (article && gen.indexOf('-') !== -1) {
   }
 }
 
-const artQuery = article ? [brand, article].filter(Boolean).join(' ').trim() : '';
-// artDash lebih dipercaya dari artSplit: itu data, bukan tebakan pola.
-const pisah = artDash || artSplit;
-const artQuerySplit = pisah ? [brand, pisah].filter(Boolean).join(' ').trim() : '';
-const base = [brand, model].filter(Boolean).join(' ').trim();
-const hasQuery = !!(artQuery || base);
-
-// country_code SENGAJA gak diisi. Kode artikel itu global — link yang selama ini
-// dipakai manual malah dari toko Taiwan. Ngunci ke 'id' bikin hasil kesempitan.
-const batch = [];
-if (artQuery) batch.push({ search: artQuery, search_limit: 10 });
-if (artQuerySplit) batch.push({ search: artQuerySplit, search_limit: 10 });
-if (base && base !== artQuery) batch.push({ search: base, search_limit: 10 });
-// Di situs brand sendiri, bentuk terpisah yang paling sering nyantol.
-for (const bs of BRAND_SITES) {
-  batch.push({ search: (pisah || article || model) + ' site:' + bs, search_limit: 5 });
+// ===== Semua bentuk kode yang kita punya, SEMUANYA dari sheet =====
+// Gak ada yang ditebak di sini. Ini penting: pendekatan lama nyandar ke daftar
+// domain brand tebakan (skechers.co.id — gak ada, yang bener skechers.id), jadi
+// tiap salah tebak bikin satu brand lumpuh diam-diam.
+const codes = [];
+function addCode(v) {
+  const s = String(v || '').trim().toUpperCase();
+  if (s && codes.indexOf(s) === -1) codes.push(s);
 }
+addCode(article);
+// GENERIC bukan cuma kode internal: situs distributor lokal justru pakai ini
+// (skechers.id nampilin SKE150802NAT, sementara skechers.com global gak punya
+// warna NAT sama sekali). Jadi dia kode pencarian yang sah, bukan sampah.
+addCode(gen);
+addCode(artDash);
+if (am) addCode(am[1] + '-' + am[2]);
+// CATATAN: kode model doang ("150802") SENGAJA gak dimasukin. Itu bakal bikin
+// halaman warna lain (150802_BBK) lolos sebagai kecocokan persis.
 
-// sku_variants dipakai Candidate Verify buat exact-match. Cukup artikel apa adanya:
-// pencocokannya normalisasi (buang non-alfanumerik) di kedua sisi, jadi "208188-001"
-// di halaman tetap kena sama varian "208188001". Gak perlu bikin varian dash.
+const pisah = artDash || artSplit;
+const base = [brand, model].filter(Boolean).join(' ').trim();
+const hasQuery = !!(codes.length || base);
+
+// Query dibangun dari kode + nama. TANPA "site:" — nguncinya ke domain tebakan
+// justru yang bikin barang gak ketemu. Biar mesin cari yang nemuin domainnya,
+// verifikasi kode di halaman yang mutusin sah apa nggak.
+// country_code juga gak diisi: kodenya global.
+const batch = [];
+for (const c of codes) {
+  batch.push({ search: [brand, c].filter(Boolean).join(' ').trim(), search_limit: 10 });
+}
+if (pisah) batch.push({ search: [brand, pisah].filter(Boolean).join(' ').trim(), search_limit: 10 });
+if (base) batch.push({ search: base, search_limit: 10 });
+
+// sku_variants dipakai Candidate Verify buat exact-match. Semua bentuk kode ikut,
+// termasuk GENERIC — pencocokannya normalisasi (buang non-alfanumerik) di kedua
+// sisi, jadi "150802_NAT" atau "SKE150802NAT" di halaman sama-sama kena.
 return [{ json: {
   row_number: o.row_number,
   brand, model, sku: article,
   base, article, has_article: !!article,
-  sku_variants: article ? [article] : [],
+  sku_variants: codes,
+  // Peringkat kandidat ditentuin sama ADA-TIDAKNYA kode di URL/judul, bukan sama
+  // daftar domain. Ini yang bikin pencariannya global: situs manapun, brand manapun.
+  article_codes: codes,
+  // Dikosongin dengan sengaja. Dulu ini daftar domain brand hasil tebakan dan dia
+  // yang nyetir peringkat — salah tebak domain = brand itu gak pernah ketemu.
+  brand_sites: [],
   // Yang dicari LINK, bukan bahan buat kie.ai — jadi sumber gak harus situs resmi
   // brand. Marketplace dibolehin karena justru dia yang paling lengkap nyimpen tiap
   // colorway (link manual yang udah ada pun dari Yahoo Shopping Taiwan).
@@ -126,7 +146,6 @@ return [{ json: {
   // per baris (sebelumnya sering cukup 1), jadi biaya spider naik.
   strict_article: true,
   has_query: hasQuery,
-  brand_sites: BRAND_SITES,
   search_batch: batch
 } }];
 `;

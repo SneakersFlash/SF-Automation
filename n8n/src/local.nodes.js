@@ -98,6 +98,17 @@ for (const it of $input.all()) {
 }
 
 const brand_sites = o.brand_sites || [];
+
+// Kode artikel yang sah buat baris ini (ARTIKEL, GENERIC, bentuk berdash) — dikirim
+// dari Build Search, semuanya dari sheet, gak ada yang ditebak. Kalau gak dikirim,
+// perilakunya sama persis kayak sebelumnya.
+const CODES = (Array.isArray(o.article_codes) ? o.article_codes : [])
+  .map(c => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''))
+  .filter(c => c.length >= 5);
+function hasCode(s) {
+  const n = String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return CODES.some(c => n.indexOf(c) !== -1);
+}
 const RETAILERS = ['planetsports.asia','sportsstation.id','footlocker.com','footlocker.co.id','mapclub.com','map.co.id',
   'sportsdirect.com','jdsports.co.id','zalora.co.id','theiconic.com','rei.com','fleetfeet.com',
   'roadrunnersports.com','shoebacca.com','stansshoes.com','tiso.com'];
@@ -151,12 +162,24 @@ for (const r of raw) {
   if (inList(h, brand_sites)) { tier = 'brand'; domainScore = 1.0; }
   else if (inList(h, RETAILERS)) { tier = 'retail'; domainScore = 0.75; }
 
+  // Kode artikel kelihatan di URL atau judul = sinyal paling kuat, dan berlaku
+  // buat situs manapun. Ini yang bikin pencarian gak gantung daftar domain:
+  // domain boleh gak dikenal, asal kodenya nyantol dia tetap naik.
+  const codeHit = hasCode(url) || hasCode(title);
+
   const titleScore = overlap(o.base || ((o.brand || '') + ' ' + (o.model || o.sku || '')), title);
-  scored.push({ url, title, host: h, tier, domainScore, titleScore, finalScore: domainScore * 0.6 + titleScore * 0.4 });
+  scored.push({ url, title, host: h, tier, domainScore, titleScore, codeHit,
+    finalScore: domainScore * 0.6 + titleScore * 0.4 });
 }
 
+// Urutan: yang kodenya nyantol duluan, baru tier domain, baru skor.
+// Kalau article_codes gak dikirim (02-local-crawl), codeHit selalu false dan
+// urutannya sama persis kayak sebelumnya.
 const rank = { brand: 0, retail: 1, other: 2 };
-scored.sort((a, b) => (rank[a.tier] - rank[b.tier]) || (b.finalScore - a.finalScore));
+scored.sort((a, b) =>
+  (Number(b.codeHit) - Number(a.codeHit))
+  || (rank[a.tier] - rank[b.tier])
+  || (b.finalScore - a.finalScore));
 // Dipotong dari 8 -> 4. Kandidat rank 5+ hampir gak pernah kepakai, tapi tiap satunya
 // = satu scrape berbayar. Brand-site udah selalu di urutan atas.
 const top = scored.slice(0, 4);
