@@ -12,6 +12,11 @@ dist/
 out/
 build/
 
+# hasil rakitan build.js. Sumbernya ada di n8n/src + n8n/templates.
+# Sengaja gak di-commit: begitu API key diisi (hardcode di node HTTP), file ini
+# berisi kredensial. Rakit ulang kapan aja: node n8n/build.js
+n8n/workflows/
+
 # logs
 *.log
 npm-debug.log*
