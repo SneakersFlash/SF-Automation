@@ -236,9 +236,13 @@
         "documentId": { "__rl": true, "value": "1rYb5KTgiwnMYhmCutuyMzZkKywSWsIVM_hlwfKK7Leo", "mode": "id" },
         "sheetName": { "__rl": true, "value": "1117001467", "mode": "id" },
         "columns": {
-          "mappingMode": "autoMapInputData",
+          "mappingMode": "defineBelow",
           "matchingColumns": ["row_number"],
-          "value": {}
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "Link Recommendation 1": "={{ $json['Link Recommendation 1'] }}",
+            "Link Recommendation 2": "={{ $json['Link Recommendation 2'] }}"
+          }
         },
         "options": {}
       },

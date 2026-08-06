@@ -115,15 +115,24 @@ try { rc = $('Rank Candidates').first().json || {}; } catch (e) {}
 const r = st.found ? (st.result || {}) : {};
 const fb = st.bestFallback || null;
 
+// Cuma dianggap sah kalau KODE ARTIKEL beneran kelihatan di halamannya.
+// Candidate Verify nge-lolosin "titleScore >= 40" sendirian — itu kelonggaran yang
+// bikin "Nike Pegasus 41" nyamain puluhan colorway dan nyetor link produk lain.
+// Hasil yang cocok judul doang tetap disetor, tapi WAJIB ditandai biar keliatan.
+const artikelKetemu = st.found
+  && (r.sku_match_type === 'exact' || r.sku_match_type === 'digits');
+
 let link1 = '', link2 = '';
 
-if (st.found) {
+if (artikelKetemu) {
   link1 = r.matched_local_url || '';
   if (fb && fb.matched_local_url && fb.matched_local_url !== link1) link2 = fb.matched_local_url;
+} else if (st.found) {
+  link1 = 'CEK DULU (judul mirip, artikel gak ketemu di halaman) - ' + (r.matched_local_url || '');
 } else if (fb) {
   // Gak ada yang lolos verifikasi tapi ada halaman yang masuk akal + ada gambarnya.
   // Tetap disetor: yang ngecek berikutnya mata creative, bukan API berbayar.
-  link1 = fb.matched_local_url || '';
+  link1 = 'CEK DULU (belum terverifikasi) - ' + (fb.matched_local_url || '');
 } else {
   link1 = 'NOT FOUND - '
     + (rc.article ? ('artikel ' + rc.article) : 'artikel kosong')
