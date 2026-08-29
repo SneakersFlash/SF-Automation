@@ -10,7 +10,7 @@ Kecerdasan buatan generatif kemudian hadir sebagai jawaban. Aghaei dkk. (2025) m
 
 Persoalan tersebut bukan kekhawatiran teoretis semata. Rahman dkk. (2025), melalui kajian pustaka sistematis berprotokol PRISMA terhadap delapan artikel terpilih dari 339 dokumen awal, menemukan ketegangan mendasar antara tuntutan efisiensi produksi dan kewajiban menjaga integritas ketika model bahasa besar dipakai untuk menulis, dengan risiko utama berupa halusinasi dan bias algoritmik. Temuan itu menegaskan perlunya keseimbangan peran manusia dan mesin, bukan penyerahan penuh kepada mesin.
 
-Salah satu arah pengembangan yang menjawab keterbatasan tersebut adalah pendekatan *multi-agent*, yaitu penggunaan beberapa agen kecerdasan buatan yang masing-masing menangani satu tugas khusus dan saling berkoordinasi. Tran dkk. (2025) menyusun kerangka yang mencirikan mekanisme kolaborasi antar-agen berdasarkan aktor, jenis interaksi, struktur, strategi, dan protokol koordinasi. Pada ranah luaran kreatif, Lin dkk. (2025) memetakan taksonomi proaktivitas agen dan desain persona serta teknik penyempurnaan iteratif. Pembagian tugas semacam ini memungkinkan tiap tahap produksi konten ditangani agen yang lebih terarah dibanding satu perintah tunggal.
+Salah satu arah kemajuan yang menjawab keterbatasan tersebut adalah pendekatan *multi-agent*, yaitu penggunaan beberapa agen kecerdasan buatan yang masing-masing menangani satu tugas khusus dan saling berkoordinasi. Tran dkk. (2025) menyusun kerangka yang mencirikan mekanisme kolaborasi antar-agen berdasarkan aktor, jenis interaksi, struktur, strategi, dan protokol koordinasi. Pada ranah luaran kreatif, Lin dkk. (2025) memetakan taksonomi proaktivitas agen dan desain persona serta teknik penyempurnaan iteratif. Pembagian tugas semacam ini memungkinkan tiap tahap produksi konten ditangani agen yang lebih terarah dibanding satu perintah tunggal.
 
 Meskipun demikian, penerapannya pada ranah pemasaran masih terbatas. Chu dkk. (2025) telah membawa pendekatan tersebut ke pemasaran, namun agen dipakai untuk mensimulasikan perilaku konsumen dan menguji strategi, bukan memproduksi materi yang benar-benar diterbitkan. Sementara itu penelitian rancang bangun sistem informasi di Indonesia umumnya berhenti pada pengujian kesesuaian fungsi tanpa menilai mutu luaran, seperti pada Yusna dkk. (2025) dan Yunus dkk. (2025).
 
@@ -49,12 +49,13 @@ c. Sejauh mana profil merek terstruktur yang digunakan sistem dapat menjaga kons
 Agar pembahasan penelitian ini tetap fokus dan dapat diselesaikan dalam waktu yang tersedia, penulis menetapkan batasan sebagai berikut:
 
 a. Objek penelitian adalah SneakersFlash dengan satu profil merek aktif;
-b. Modul yang diteliti terbatas pada produksi konten, yaitu penyusunan ringkasan konten, penulisan naskah, dan penghalusan teks. Modul pendapatan dan performa media sosial berada di luar lingkup penelitian karena integrasinya belum aktif;
-c. Model bahasa yang digunakan diperlakukan sebagai *kotak hitam*. Penelitian ini tidak mengevaluasi, membandingkan, maupun melatih ulang model;
-d. Perbandingan efisiensi dilakukan antara proses lama secara keseluruhan dan proses baru secara keseluruhan. Penelitian ini tidak mengisolasi kontribusi arsitektur *multi-agent* semata, karena antarmuka terpusat dan arsitektur agen diterapkan secara bersamaan;
-e. Konsistensi *brand voice* dinilai oleh manusia menggunakan rubrik penilaian, bukan menggunakan perangkat pendeteksi teks kecerdasan buatan otomatis;
-f. Data durasi penyiapan konten sebelum sistem diterapkan berupa estimasi retrospektif dari praktik kerja tim, bukan catatan waktu yang terekam sistem, sehingga pembandingannya dilakukan secara deskriptif;
-g. Aspek keamanan sistem dan infrastruktur penempatan aplikasi tidak dibahas dalam penelitian ini.
+b. Sistem yang dirancang berstatus prototipe dan masih berada pada tahap pengujian, belum diterapkan pada kegiatan operasional harian. Penilaian yang dilakukan penelitian ini terbatas pada keluaran prototipe tersebut;
+c. Modul yang diteliti terbatas pada produksi konten, yaitu penyusunan ringkasan konten, penulisan naskah, dan penghalusan teks. Modul pendapatan dan performa media sosial berada di luar lingkup penelitian karena integrasinya belum aktif;
+d. Model bahasa yang digunakan diperlakukan sebagai *kotak hitam*. Penelitian ini tidak mengevaluasi, membandingkan, maupun melatih ulang model;
+e. Perbandingan efisiensi dilakukan antara proses lama secara keseluruhan dan proses baru secara keseluruhan. Penelitian ini tidak mengisolasi kontribusi arsitektur *multi-agent* semata, karena antarmuka terpusat dan arsitektur agen diterapkan secara bersamaan;
+f. Konsistensi *brand voice* dinilai oleh manusia menggunakan rubrik penilaian, bukan menggunakan perangkat pendeteksi teks kecerdasan buatan otomatis;
+g. Data durasi penyiapan konten sebelum sistem diterapkan berupa estimasi retrospektif dari praktik kerja tim, bukan catatan waktu yang terekam sistem, sehingga pembandingannya dilakukan secara deskriptif;
+h. Aspek keamanan sistem dan infrastruktur penempatan aplikasi tidak dibahas dalam penelitian ini.
 
 ## 1.5 Tujuan Penelitian
 

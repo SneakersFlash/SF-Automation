@@ -64,7 +64,7 @@ e. Skalabilitas: layanan *backend* disusun modular per fitur sehingga penambahan
 
 ### 3.1.6. Kebutuhan Perangkat Keras dan Perangkat Lunak
 
-Kebutuhan perangkat lunak untuk pengembangan dan pengoperasian sistem adalah sebagai berikut:
+Kebutuhan perangkat lunak untuk perancangan dan pengujian sistem adalah sebagai berikut:
 
 a. Antarmuka pengguna dibangun menggunakan kerangka kerja Next.js dengan bahasa TypeScript;
 b. Layanan *backend* dibangun menggunakan kerangka kerja NestJS dengan bahasa TypeScript dan pemeta basis data Prisma;
@@ -141,7 +141,7 @@ Perlu ditegaskan bahwa perbandingan waktu dilakukan antara proses lama secara ke
 
 ## 3.3 Metode Pengembangan Sistem
 
-Sistem dikembangkan menggunakan metode *Rapid Application Development* sebagaimana diuraikan pada sub-bab 2.2.7. Metode ini dipilih karena sifat pengembangan yang berlangsung bersifat berulang, ukuran tim kecil, dan pengguna terlibat langsung pada setiap tahapan. Tahapan metode beserta keluarannya disajikan pada Gambar 3.5 dan diuraikan sebagai berikut.
+Sistem dirancang dan dibangun menggunakan metode *Rapid Application Development* sebagaimana diuraikan pada sub-bab 2.2.7. Metode ini dipilih karena perancangan berlangsung berulang, ukuran tim kecil, dan pengguna terlibat langsung pada setiap tahapan. Tahapan metode beserta keluarannya disajikan pada Gambar 3.5 dan diuraikan sebagai berikut.
 
 ### 3.3.1. Requirements Planning
 
@@ -153,11 +153,11 @@ Pada fase ini rancangan disusun bersama pengguna secara berulang. Kegiatan yang 
 
 ### 3.3.3. Construction
 
-Pada fase ini sistem dibangun mengikuti rancangan yang telah disepakati. Pembangunan dilakukan bertahap per bagian fungsi, yaitu autentikasi, manajemen pengguna, profil merek dan subjek, modul produksi konten, modul iklan, serta pencatatan dan proses gabungan. Setiap bagian diuji begitu selesai, dan hasil pengujian dipakai untuk memperbaiki bagian tersebut sebelum bagian berikutnya dikerjakan. Pada fase inilah penyempurnaan konteks merek dilakukan setelah keluaran sistem dinilai masih terlalu umum.
+Pada fase ini sistem dibangun mengikuti rancangan yang telah disepakati. Pembangunan dilakukan bertahap per bagian fungsi, yaitu autentikasi, manajemen pengguna, profil merek dan subjek, modul produksi konten, modul iklan, serta pencatatan dan proses gabungan. Setiap bagian diuji begitu selesai, dan hasil pengujian dipakai untuk memperbaiki bagian tersebut sebelum bagian berikutnya dikerjakan. Pada fase ini penyempurnaan konteks merek dilakukan ketika keluaran prototipe dinilai masih terlalu umum.
 
 ### 3.3.4. Cutover
 
-Pada fase ini sistem dialihkan ke lingkungan operasional. Kegiatan yang dilakukan meliputi penempatan seluruh layanan dalam wadah, pemasangan pada peladen, penyiapan akun awal, dan pengujian menyeluruh pada lingkungan sebenarnya. Keluaran fase ini berupa sistem yang dapat diakses dan digunakan tim.
+Pada fase ini sistem dialihkan ke lingkungan uji yang menyerupai lingkungan sebenarnya. Kegiatan yang dilakukan meliputi penempatan seluruh layanan dalam wadah, pemasangan pada peladen uji, penyiapan akun awal, dan pengujian menyeluruh. Keluaran fase ini berupa prototipe yang dapat diakses dan diuji oleh tim. Penerapan penuh pada kegiatan operasional harian berada di luar lingkup penelitian ini.
 
 ## 3.4 Jadwal Penelitian
 
