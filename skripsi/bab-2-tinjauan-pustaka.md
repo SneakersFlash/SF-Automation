@@ -81,7 +81,9 @@ Kesesuaian tersebut tidak terbentuk dengan sendirinya. Wang dkk. (2025) menemuka
 
 ### 2.2.5. Otomasi Alur Kerja dan Antrian Tugas
 
-[SITASI DIBUTUHKAN: konsep *workflow automation* dan antrian tugas asinkron. Penelusuran belum menemukan sumber akademik yang dapat diverifikasi; kandidat yang muncul berupa tulisan teknis tanpa telaah sejawat dan satu jurnal yang menolak diakses. Coba istilah *message queue*, *asynchronous task processing*, atau *background job* pada jurnal rekayasa perangkat lunak.]
+Otomasi alur kerja pada aplikasi web menuntut pemisahan antara permintaan pengguna dan proses yang memakan waktu lama. Gutiérrez-Leal dkk. (2026) menerapkan arsitektur yang memadukan layanan web, pekerja latar belakang asinkron, basis data relasional, dan penyimpanan kunci-nilai untuk mengolah 22.286 respons teks menggunakan model bahasa besar. Mekanisme asinkron tersebut dipicu saat permintaan dikirim agar siklus permintaan dan tanggapan tidak terkunci menunggu proses inferensi yang berlatensi tinggi.
+
+Pada arsitektur tersebut, setiap permintaan mendaftarkan tugas baru dengan pengenal unik yang kemudian dimasukkan ke antrian untuk dijalankan di latar belakang, sementara layanan web langsung mengembalikan tanda terima berisi pengenal tugas. Konfigurasi produksinya menggunakan empat pekerja, dan ketika seluruh pekerja sibuk maka permintaan berikutnya menunggu dalam antrian sampai kapasitas tersedia. Pola inilah yang dipakai pada penelitian ini untuk menjalankan proses gabungan penghasilan materi konten.
 
 ### 2.2.6. Arsitektur Aplikasi Web dan REST API
 
@@ -111,7 +113,9 @@ Perancangan sistem pada penelitian ini menggunakan notasi *Unified Modeling Lang
 
 Pada sisi basis data, Renanti dkk. (2025) menerapkan pendekatan *Database Life Cycle* dengan penekanan pada perancangan logis serta normalisasi bertahap dari UNF sampai 3NF untuk menghilangkan kerangkapan dan anomali data.
 
-[SITASI DIBUTUHKAN: satu rujukan yang menguraikan komponen dasar *Entity Relationship Diagram*, yaitu entitas, atribut, relasi, dan kardinalitas. Beberapa kandidat sudah ditelusuri namun tidak lolos verifikasi: satu berkas menolak diakses, dan satu lagi ternyata membahas normalisasi basis data, bukan komponen ERD, meskipun judulnya menyiratkan sebaliknya.]
+*Entity Relationship Diagram* menggambarkan struktur data melalui empat komponen dasar. Kadir (2020) menjelaskan entitas sebagai sesuatu dalam dunia nyata yang keberadaannya tidak bergantung pada yang lain, sedangkan atribut merupakan properti atau karakteristik yang melekat pada setiap entitas. Hubungan menyatakan keterkaitan antara beberapa tipe entitas, dengan jenis satu ke satu, satu ke banyak, banyak ke satu, dan banyak ke banyak.
+
+Kekangan kardinalitas menyatakan jumlah instan entitas suatu tipe yang dikaitkan dengan setiap instan pada tipe entitas lain, dan dibedakan menjadi kardinalitas minimum serta kardinalitas maksimum (Kadir, 2020). Keempat komponen inilah yang dipakai pada perancangan basis data penelitian ini.
 
 ## 2.3 Kerangka Berpikir
 

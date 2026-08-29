@@ -20,6 +20,10 @@ Djaini, A., Permana, R. M., & Mahmudin, T. (2025). Analisis strategi adaptif UMK
       integrasi teknologi ChatGPT sebagai instrumen peningkatan daya saing berkelanjutan
       dan akselerasi inovasi bisnis di era transformasi digital. *Jurnal Minfo Polgan,
       14*(1), 1015-1024. https://doi.org/10.33395/jmp.v14i1.14959
+Gutiérrez-Leal, D. E., León-Sandoval, E., Quintana Contreras, E., & Barbosa-Santillán, L. I.
+      (2026). Production architecture of an AI-powered survey evaluation system: Insights
+      from education. *Applied System Innovation, 9*(6), 118.
+      https://doi.org/10.3390/asi9060118
 Hanum, R., Fachrudin, D. H., & Rohyana, C. (2026). Rancang bangun sistem informasi UMKM
       berbasis web untuk promosi digital menggunakan metode rapid application development
       (RAD). *MALCOM: Indonesian Journal of Machine Learning and Computer Science, 6*(1),
@@ -32,6 +36,8 @@ Hashemi, H., Eisner, J., Rosset, C., Van Durme, B., & Kedzie, C. (2024). LLM-Rub
 Ibrahim, F. N., & Abdurrahman, A. (2025). Pengaruh promosi dan brand image melalui media
       sosial terhadap keputusan pembelian sepatu olahraga. *Selekta Manajemen: Jurnal
       Mahasiswa Bisnis & Manajemen, 3*(2), 65-75.
+Kadir, A. (2020). *Dasar perancangan dan implementasi database relasional* (Edisi revisi).
+      Penerbit Andi.
 Kirkby, A., Baumgarth, C., & Henseler, J. (2023). To disclose or not disclose, is no longer
       the question: Effect of AI-disclosed brand voice on brand authenticity and attitude.
       *Journal of Product & Brand Management, 32*(7), 1108-1122.
