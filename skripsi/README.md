@@ -20,7 +20,9 @@ Judul:
 | `bab-1-pendahuluan.md` | **Sumber tunggal** BAB I. Sunting yang ini. |
 | `bab-2-tinjauan-pustaka.md` | **Sumber tunggal** BAB II. |
 | `bab-3-metode-penelitian.md` | **Sumber tunggal** BAB III. |
-| `proposal-skripsi-bab-1-3.docx` | **Dokumen gabungan** BAB I–III + Daftar Pustaka. Ini yang diserahkan. |
+| `proposal-skripsi-lengkap.docx` | **Berkas yang diserahkan.** Halaman Judul + Daftar Isi/Gambar/Tabel + BAB I–III + Daftar Pustaka. |
+| `proposal-skripsi-bab-1-3.docx` | Gabungan tanpa bagian awal. Berguna kalau bagian awal dibuat sendiri di Word. |
+| `daftar-gambar-tabel.md` | Keterangan gambar dan tabel. Sunting di sini kalau judulnya berubah. |
 | `daftar-pustaka.md` | Rujukan terverifikasi, gaya APA. Tumbuh seiring bab bertambah. |
 | `*.docx` | Hasil rakitan, format sudah sesuai pedoman. Jangan disunting langsung — akan tertimpa. |
 | `build_docx.py` | Perakit `.md` → `.docx`. Stdlib saja, tanpa dependensi. |
@@ -41,7 +43,30 @@ python3 build_docx.py bab-3-metode-penelitian.md
 python3 build_docx.py bab-1-pendahuluan.md bab-2-tinjauan-pustaka.md \
         bab-3-metode-penelitian.md --pustaka daftar-pustaka.md \
         -o proposal-skripsi-bab-1-3.docx
+
+# berkas lengkap berikut bagian awal
+python3 build_docx.py bab-1-pendahuluan.md bab-2-tinjauan-pustaka.md \
+        bab-3-metode-penelitian.md \
+        --pustaka daftar-pustaka.md --label daftar-gambar-tabel.md \
+        --judul "Perancangan Sistem Otomasi Produksi Konten Pemasaran Berbasis \
+Multi-Agent AI untuk Meningkatkan Efisiensi dan Konsistensi Brand Voice \
+(Studi Kasus: SneakersFlash)" \
+        --nama "Muhammad Faizal Triasa" --nim 231011701215 --tahun 2026 \
+        -o proposal-skripsi-lengkap.docx
 ```
+
+## Dua hal yang tetap manual di Word
+
+Perakit tidak dapat menyisipkan gambar maupun mengatur penomoran halaman:
+
+1. **Logo Universitas Pamulang 4 cm x 4 cm** pada halaman judul. Tempatnya sudah
+   ditandai. Logo dapat diambil dari `skripsi .docx` yang diunggah sebelumnya.
+2. **Nomor halaman** — Romawi kecil untuk bagian awal, angka untuk bagian inti,
+   kanan atas kecuali halaman awal bab yang di tengah bawah.
+
+Setelah penomoran diatur, isi nomor halaman pada Daftar Isi, Daftar Gambar, dan
+Daftar Tabel. Titik penuntun sudah dipasang sebagai tab rata kanan, jadi angka
+yang diketik langsung menempel rapi di tepi kanan.
 
 Mesin ini tidak punya pandoc, libreoffice, maupun python-docx, jadi `build_docx.py`
 merakit `.docx` langsung sebagai arsip ZIP berisi OOXML.

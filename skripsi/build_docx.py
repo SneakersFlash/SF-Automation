@@ -54,7 +54,7 @@ def esc(t):
     return t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def runs(text, bold=False, size=SZ_BODY):
+def runs(text, bold=False, size=SZ_BODY, font=None):
     """Ubah teks jadi run OOXML; *...* jadi miring, [...] jadi tebal."""
     out = []
     for i, chunk in enumerate(text.split("*")):
@@ -65,7 +65,8 @@ def runs(text, bold=False, size=SZ_BODY):
             if not piece:
                 continue
             b = bold or piece.startswith("[")
-            props = f'<w:rFonts w:ascii="{FONT}" w:hAnsi="{FONT}" w:cs="{FONT}"/>'
+            f = font or FONT
+            props = f'<w:rFonts w:ascii="{f}" w:hAnsi="{f}" w:cs="{f}"/>'
             if b:
                 props += "<w:b/>"
             if italic:
@@ -77,7 +78,7 @@ def runs(text, bold=False, size=SZ_BODY):
 
 
 def para(text, *, jc="both", bold=False, size=SZ_BODY,
-         first_line=0, left=0, hanging=0):
+         first_line=0, left=0, hanging=0, font=None, line=None, leader=False):
     ind = ""
     if left or first_line or hanging:
         bits = []
@@ -88,9 +89,13 @@ def para(text, *, jc="both", bold=False, size=SZ_BODY,
         elif first_line:
             bits.append(f'w:firstLine="{first_line}"')
         ind = f'<w:ind {" ".join(bits)}/>'
-    return (f'<w:p><w:pPr><w:jc w:val="{jc}"/>'
-            f'<w:spacing w:before="0" w:after="0" w:line="{LINE}" w:lineRule="auto"/>'
-            f'{ind}</w:pPr>{runs(text, bold=bold, size=size)}</w:p>')
+    tabs = ('<w:tabs><w:tab w:val="right" w:leader="dot" w:pos="7937"/></w:tabs>'
+            if leader else '')
+    ekor = '<w:r><w:tab/></w:r>' if leader else ''
+    return (f'<w:p><w:pPr>{tabs}<w:jc w:val="{jc}"/>'
+            f'<w:spacing w:before="0" w:after="0" w:line="{line or LINE}" '
+            f'w:lineRule="auto"/>'
+            f'{ind}</w:pPr>{runs(text, bold=bold, size=size, font=font)}{ekor}</w:p>')
 
 
 def sel(text, *, header=False, width=1417):
@@ -154,6 +159,67 @@ def blok_pustaka(path):
         # Pedoman menuntut rata kiri-kanan dan tidak mengecualikan daftar pustaka.
         out.append(para(e, jc="both", left=HANGING, hanging=HANGING))
     return "".join(out)
+
+
+TAHOMA = "Tahoma"
+LINE_SATU = 240                 # spasi 1 untuk isi daftar
+
+
+def halaman_judul(judul, nama, nim, tahun):
+    """Susunan dan ukuran huruf mengikuti Contoh 3 pedoman (font Tahoma)."""
+    T = lambda t, sz: para(t, jc="center", bold=True, size=sz, font=TAHOMA)
+    kosong = para("", jc="center")
+    return "".join([
+        T(judul.upper(), 40),                       # Tahoma 20
+        kosong,
+        T("PROPOSAL SKRIPSI", 28),                  # Tahoma 14
+        kosong, kosong,
+        para("[ SISIPKAN LOGO UNIVERSITAS PAMULANG DI SINI — UKURAN 4 cm x 4 cm ]",
+             jc="center", bold=True, size=24, font=TAHOMA),
+        kosong, kosong,
+        T("Oleh :", 24),                            # Tahoma 12
+        T(nama, 24),
+        T(nim, 24),
+        kosong, kosong,
+        T("PROGRAM STUDI SISTEM INFORMASI", 32),    # Tahoma 16
+        T("FAKULTAS ILMU KOMPUTER", 36),            # Tahoma 18
+        T("UNIVERSITAS PAMULANG", 40),              # Tahoma 20
+        T(str(tahun), 28),                          # Tahoma 14
+    ])
+
+
+def daftar(judul, entri):
+    """Judul TNR 14 bold, jarak 2 x 1,5 spasi, isi spasi 1 dengan titik penuntun."""
+    out = [para(judul, jc="center", bold=True, size=SZ_BAB),
+           para("", jc="both"), para("", jc="both")]
+    for teks, menjorok in entri:
+        out.append(para(teks, jc="left", left=(INDENT if menjorok else 0),
+                        line=LINE_SATU, leader=True))
+    return "".join(out)
+
+
+def kumpulkan_entri(md_paths):
+    """Turunkan entri Daftar Isi dari judul bab dan sub-bab pada naskah."""
+    entri = []
+    for m in md_paths:
+        for baris in open(m, encoding="utf-8").read().splitlines():
+            b = baris.strip()
+            if b.startswith("# "):
+                entri.append((b[2:].strip(), False))
+            elif b.startswith("## "):
+                entri.append((b[3:].strip(), True))
+    return entri
+
+
+def kumpulkan_label(md_paths, awalan):
+    """Kumpulkan rujukan 'Gambar N.N' / 'Tabel N.N' sesuai urutan kemunculan."""
+    pola = re.compile(rf"\b{awalan} (\d+\.\d+)\b")
+    urut = []
+    for m in md_paths:
+        for nomor in pola.findall(open(m, encoding="utf-8").read()):
+            if nomor not in urut:
+                urut.append(nomor)
+    return sorted(urut, key=lambda x: [int(v) for v in x.split(".")])
 
 
 def parse(md):
@@ -232,8 +298,44 @@ def parse(md):
     return "".join(body)
 
 
-def build(md_paths, out_path, pustaka=None):
-    bagian = [parse(open(m, encoding="utf-8").read()) for m in md_paths]
+def baca_label(path):
+    """Baca berkas keterangan gambar/tabel -> ({nomor: judul}, {nomor: judul})."""
+    gambar, tabel, mode = {}, {}, None
+    for baris in open(path, encoding="utf-8").read().splitlines():
+        b = baris.strip()
+        if not b or b.startswith("#"):
+            continue
+        if b.upper() == "GAMBAR":
+            mode = gambar; continue
+        if b.upper() == "TABEL":
+            mode = tabel; continue
+        if mode is not None and "|" in b:
+            nomor, judul = b.split("|", 1)
+            mode[nomor.strip()] = judul.strip()
+    return gambar, tabel
+
+
+def build(md_paths, out_path, pustaka=None, awal=None, label=None):
+    bagian = []
+    if awal:
+        judul, nama, nim, tahun = awal
+        bagian.append(halaman_judul(judul, nama, nim, tahun))
+
+        isi = [("HALAMAN JUDUL", False), ("DAFTAR ISI", False),
+               ("DAFTAR GAMBAR", False), ("DAFTAR TABEL", False)]
+        isi += kumpulkan_entri(md_paths)
+        if pustaka:
+            isi.append(("DAFTAR PUSTAKA", False))
+        bagian.append(daftar("DAFTAR ISI", isi))
+
+        ket_g, ket_t = baca_label(label) if label else ({}, {})
+        for nama_daftar, awalan, ket in (("DAFTAR GAMBAR", "Gambar", ket_g),
+                                         ("DAFTAR TABEL", "Tabel", ket_t)):
+            nomor = kumpulkan_label(md_paths, awalan)
+            entri = [(f"{awalan} {n}  {ket.get(n, '')}".rstrip(), False) for n in nomor]
+            bagian.append(daftar(nama_daftar, entri))
+
+    bagian += [parse(open(m, encoding="utf-8").read()) for m in md_paths]
     if pustaka:
         bagian.append(blok_pustaka(pustaka))
     body = ganti_halaman().join(bagian)
@@ -288,17 +390,23 @@ def build(md_paths, out_path, pustaka=None):
 
 def main():
     argv = sys.argv[1:]
-    out, pustaka, src = None, None, []
-    i = 0
+    out = pustaka = label = None
+    nama = nim = tahun = judul = None
+    src, i = [], 0
+    opsi = {"-o", "--pustaka", "--label", "--nama", "--nim", "--tahun", "--judul"}
     while i < len(argv):
         a = argv[i]
-        if a in ("-o", "--pustaka"):
+        if a in opsi:
             if i + 1 >= len(argv):
                 sys.exit(f"ERROR: {a} butuh nilai")
-            if a == "-o":
-                out = argv[i + 1]
-            else:
-                pustaka = argv[i + 1]
+            nilai = argv[i + 1]
+            if a == "-o": out = nilai
+            elif a == "--pustaka": pustaka = nilai
+            elif a == "--label": label = nilai
+            elif a == "--nama": nama = nilai
+            elif a == "--nim": nim = nilai
+            elif a == "--tahun": tahun = nilai
+            else: judul = nilai
             i += 2
             continue
         if a.startswith("-"):
@@ -308,11 +416,22 @@ def main():
 
     if not src:
         sys.exit("Pemakaian: python3 build_docx.py <sumber.md> [sumber2.md ...] "
-                 "[--pustaka daftar-pustaka.md] [-o keluaran.docx]")
+                 "[--pustaka daftar-pustaka.md] [--label daftar-gambar-tabel.md] "
+                 "[--judul \"...\" --nama \"...\" --nim ... --tahun ...] "
+                 "[-o keluaran.docx]")
+
+    awal = None
+    if nama or nim or judul:
+        kurang = [k for k, v in (("--judul", judul), ("--nama", nama),
+                                 ("--nim", nim), ("--tahun", tahun)) if not v]
+        if kurang:
+            sys.exit("ERROR: bagian awal butuh " + ", ".join(kurang))
+        awal = (judul, nama, nim, tahun)
 
     out = out or src[0].rsplit(".", 1)[0] + ".docx"
-    build(src, out, pustaka)
-    ket = f" + {pustaka}" if pustaka else ""
+    build(src, out, pustaka, awal, label)
+    ket = " + bagian awal" if awal else ""
+    ket += f" + {pustaka}" if pustaka else ""
     print(f"OK  {' + '.join(src)}{ket} -> {out}")
 
 
