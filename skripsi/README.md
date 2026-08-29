@@ -51,7 +51,8 @@ Times New Roman 12, rata kiri-kanan, spasi 1,5, before/after 0 pt, judul bab TNR
 bold. Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
 aturan spasi 1,5.
 
-Audit daftar pustaka: 6 entri, seluruhnya terbitan 2025, tidak ada yang melewati batas usia.
+Audit daftar pustaka: **8 entri, 0 temuan** — seluruhnya terbitan 2025, urutan alfabetis
+benar, tidak ada entri ganda, tidak ada yang melewati batas usia.
 
 Yang **tidak** diperiksa script dan harus dicek manual di Word: posisi nomor halaman,
 penomoran Romawi kecil bagian awal, jarak antar-judul, indentasi alinea, dan cetak miring
@@ -66,16 +67,22 @@ Tiga penanda di dalam naskah wajib diisi sebelum diserahkan ke pembimbing:
 - `[ANGKA DARI DATA PENELITI: ...]` — satu tempat di 1.1, untuk durasi penyiapan konten
   sebelum sistem diterapkan.
 
-Pada BAB II terdapat `[SITASI DIBUTUHKAN: ...]` di tujuh sub-sub-bab Landasan Teori dan satu
+Pada BAB II terdapat `[SITASI DIBUTUHKAN: ...]` di enam sub-sub-bab Landasan Teori dan satu
 `[CATATAN UNTUK PENULIS]` di 2.1.
 
-**Status rujukan.** Enam sumber pada `daftar-pustaka.md` sudah diverifikasi langsung ke
-halaman penerbit, bukan dikutip dari hasil pencarian. Empat di antaranya melalui telaah
-sejawat (EMNLP 2025, IEEE ICEBE 2025, dan dua jurnal Indonesia); **dua sisanya —
+**Status rujukan.** Delapan sumber pada `daftar-pustaka.md` sudah diverifikasi langsung ke
+halaman penerbit, bukan dikutip dari hasil pencarian. Enam di antaranya melalui telaah
+sejawat (EMNLP 2025, IEEE ICEBE 2025, dan empat jurnal Indonesia ber-DOI); **dua sisanya —
 Tran dkk. dan Aghaei dkk. — berstatus *preprint* arXiv, bukan jurnal.** Pedoman menuntut
 rujukan berupa jurnal, jadi pertimbangkan menggantinya atau meminta persetujuan pembimbing.
 
-Praktik lazim menuntut 8–10 penelitian terdahulu; baru ada 6. Perlu 2–4 sumber tambahan.
+Penelitian terdahulu kini berjumlah **8**, sudah memenuhi praktik lazim 8–10 sumber.
+
+**Metode pengembangan sistem: RAD** (*Rapid Application Development*), bukan Waterfall.
+Dipilih karena riwayat commit menunjukkan putaran umpan balik yang nyata — `api/src`
+disentuh 92 kali, rasio `fix` terhadap `feat` 10:14, dan `loadBrandContext()` ditambahkan
+setelah sistem sudah tayang karena keluarannya dinilai generik. Rentang pengerjaan
+1 Juli – 29 Agustus 2026 (60 hari) juga cocok dengan siklus pendek RAD.
 
 Catatan verifikasi: jurnal Promedia menuliskan nama penulis yang berbeda pada blok
 sitasi bawaannya ("Yudianto, Ferdi") dibanding *byline* artikelnya (Rahman, Choirunnisa,
