@@ -9,8 +9,9 @@ Pedoman ini hanya mengatur **proposal (BAB I–III)**; aturan BAB IV–V tidak a
 
 Judul:
 
-> Otomasi Produksi Konten Pemasaran Berbasis *Multi-Agent* AI untuk Meningkatkan
-> Efisiensi dan Konsistensi *Brand Voice* (Studi Kasus: SneakersFlash)
+> Perancangan Sistem Otomasi Produksi Konten Pemasaran Berbasis *Multi-Agent* AI
+> untuk Meningkatkan Efisiensi dan Konsistensi *Brand Voice*
+> (Studi Kasus: SneakersFlash)
 
 ## Isi
 

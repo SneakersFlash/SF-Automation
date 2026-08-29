@@ -24,7 +24,7 @@ Apabila dibiarkan, dampaknya berlapis. Jadwal peluncuran berpotensi meleset dan 
 
 Berangkat dari keadaan tersebut, penelitian ini mengusulkan sistem otomasi produksi konten pemasaran berpendekatan *multi-agent* yang dijalankan melalui satu gerbang layanan tunggal. Pembedanya terletak pada profil merek terstruktur yang memuat gaya bahasa, sasaran audiens, keunggulan produk, batasan penulisan, ajakan bertindak, dan contoh naskah. Profil itu disertakan sebagai konteks pada setiap permintaan kepada agen, sehingga standar merek dieksekusi sistem dan tidak lagi bergantung pada ingatan admin. Sejalan dengan temuan Rahman dkk. (2025), setiap proses penghasilan materi dicatat dan manusia tetap menjadi pemeriksa akhir.
 
-Sistem tersebut diharapkan menjawab dua persoalan sekaligus, yaitu lamanya waktu penyiapan materi dan tidak seragamnya gaya bahasa merek, dan kedua hal itulah yang menjadi ukuran keberhasilan penelitian ini. Berdasarkan seluruh uraian di atas, penulis mengambil judul penelitian *Otomasi Produksi Konten Pemasaran Berbasis Multi-Agent AI untuk Meningkatkan Efisiensi dan Konsistensi Brand Voice (Studi Kasus: SneakersFlash)*.
+Sistem tersebut diharapkan menjawab dua persoalan sekaligus, yaitu lamanya waktu penyiapan materi dan tidak seragamnya gaya bahasa merek, dan kedua hal itulah yang menjadi ukuran keberhasilan penelitian ini. Berdasarkan seluruh uraian di atas, penulis mengambil judul penelitian *Perancangan Sistem Otomasi Produksi Konten Pemasaran Berbasis Multi-Agent AI untuk Meningkatkan Efisiensi dan Konsistensi Brand Voice (Studi Kasus: SneakersFlash)*.
 
 ## 1.2 Identifikasi Masalah
 
