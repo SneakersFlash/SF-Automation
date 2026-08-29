@@ -53,7 +53,9 @@ Dengan demikian terdapat celah riset yang belum terisi. Belum ditemukan peneliti
 
 ### 2.2.1. Produksi Konten Pemasaran Digital
 
-[SITASI DIBUTUHKAN: definisi pemasaran konten digital dan tahapan produksinya, dari buku terbitan maksimal sepuluh tahun terakhir atau jurnal maksimal lima tahun terakhir]
+Pemasaran konten digital adalah pendekatan pemasaran yang menempatkan materi konten sebagai sarana utama untuk menarik dan mempertahankan perhatian audiens pada kanal digital. Putra dkk. (2025), melalui survei terhadap 100 responden, menemukan bahwa strategi *content marketing* berpengaruh signifikan terhadap kinerja pemasaran.
+
+Pada ranah ritel sepatu olahraga, Ibrahim dan Abdurrahman (2025) menemukan bahwa promosi dan citra merek melalui media sosial berpengaruh signifikan terhadap keputusan pembelian, serta menganjurkan agar pesan merek dijaga konsisten di seluruh platform. Kedua temuan tersebut menegaskan bahwa yang menentukan bukan semata keberadaan konten, melainkan juga keajekan cara konten itu disampaikan.
 
 ### 2.2.2. Kecerdasan Buatan Generatif dan Model Bahasa Besar
 
@@ -75,15 +77,17 @@ Penerapan pendekatan *multi-agent* pada ranah pemasaran telah ditunjukkan Chu dk
 
 Kesesuaian tersebut tidak terbentuk dengan sendirinya. Wang dkk. (2025) menemukan bahwa model bahasa besar kesulitan meniru gaya menulis yang tidak dinyatakan secara eksplisit, terutama gaya informal. Oleh karena itu penelitian ini memperlakukan *brand voice* sebagai sekumpulan ketentuan tertulis dan terstruktur yang disertakan sebagai konteks, bukan sebagai gaya yang diharapkan tertangkap sendiri oleh model dari contoh naskah.
 
-[SITASI DIBUTUHKAN: satu definisi baku *brand voice* dari buku *branding* atau jurnal manajemen pemasaran, terbitan maksimal sepuluh tahun terakhir, untuk memperkuat paragraf pembuka]
+[SITASI DIBUTUHKAN: satu definisi baku *brand voice* dari buku *branding* atau jurnal manajemen pemasaran untuk memperkuat kalimat pembuka. Sisi pengujiannya sudah ditopang Kirkby dkk. (2023); yang belum ada hanya definisi formalnya.]
 
 ### 2.2.5. Otomasi Alur Kerja dan Antrian Tugas
 
-[SITASI DIBUTUHKAN: konsep *workflow automation* dan antrian tugas asinkron pada aplikasi web]
+[SITASI DIBUTUHKAN: konsep *workflow automation* dan antrian tugas asinkron. Penelusuran belum menemukan sumber akademik yang dapat diverifikasi; kandidat yang muncul berupa tulisan teknis tanpa telaah sejawat dan satu jurnal yang menolak diakses. Coba istilah *message queue*, *asynchronous task processing*, atau *background job* pada jurnal rekayasa perangkat lunak.]
 
 ### 2.2.6. Arsitektur Aplikasi Web dan REST API
 
-[SITASI DIBUTUHKAN: arsitektur klien-server dan prinsip REST API]
+Aplikasi web modern umumnya disusun dengan memisahkan antarmuka pengguna dari layanan yang mengolah data, dan keduanya berkomunikasi melalui antarmuka pemrograman aplikasi. Bramantyo dkk. (2025) menerapkan arsitektur REST API untuk memvalidasi, memproses, dan memformat data yang kemudian dikirimkan ke pusat basis data melalui protokol HTTP standar seperti GET dan POST.
+
+Pola tersebut dipakai pada penelitian ini. Antarmuka pengguna hanya berhubungan dengan layanan *backend* melalui REST API, dan tidak pernah mengakses basis data maupun gerbang agen secara langsung.
 
 ### 2.2.7. Metode Pengembangan Sistem Rapid Application Development
 
@@ -97,11 +101,17 @@ Metode RAD dipilih pada penelitian ini karena sesuai dengan sifat pengembangan y
 
 ### 2.2.8. Rubrik Penilaian dan Kesepakatan Antar-Penilai
 
-[SITASI DIBUTUHKAN: penyusunan rubrik penilaian dan pengukuran kesepakatan antar-penilai, misalnya koefisien Kappa]
+Rubrik penilaian adalah instrumen yang menguraikan dimensi penilaian beserta ukuran pada setiap tingkat skor. Hashemi dkk. (2024) menunjukkan bahwa mutu teks dapat dinilai secara terstruktur melalui rubrik berdimensi banyak yang dirumuskan terlebih dahulu, dan pendekatan itulah yang diadopsi pada penyusunan matriks penilaian di penelitian ini.
+
+Ketika penilaian dilakukan oleh lebih dari satu orang, tingkat kesepakatan antar-penilai perlu dilaporkan agar hasil penilaian dapat dipercaya. Borse dkk. (2025) mengukur kesepakatan tersebut menggunakan koefisien Kappa dan melaporkan kesepakatan substansial pada tiga tema serta moderat pada satu tema. Penelitian ini menempuh cara yang sama, yaitu melaporkan koefisien kesepakatan antar-penilai sebagai bagian dari hasil.
 
 ### 2.2.9. Notasi Perancangan Sistem
 
-[SITASI DIBUTUHKAN: notasi *Unified Modeling Language* dan *Entity Relationship Diagram*]
+Perancangan sistem pada penelitian ini menggunakan notasi *Unified Modeling Language* dan *Entity Relationship Diagram*. Rospricilia dan Ma'ady (2024) menegaskan pentingnya penerapan notasi UML yang tepat ketika menggambarkan *use case diagram*, terlebih pada sistem yang harus berinteraksi dengan aplikasi lain yang sudah berjalan.
+
+Pada sisi basis data, Renanti dkk. (2025) menerapkan pendekatan *Database Life Cycle* dengan penekanan pada perancangan logis serta normalisasi bertahap dari UNF sampai 3NF untuk menghilangkan kerangkapan dan anomali data.
+
+[SITASI DIBUTUHKAN: satu rujukan yang menguraikan komponen dasar *Entity Relationship Diagram*, yaitu entitas, atribut, relasi, dan kardinalitas. Beberapa kandidat sudah ditelusuri namun tidak lolos verifikasi: satu berkas menolak diakses, dan satu lagi ternyata membahas normalisasi basis data, bukan komponen ERD, meskipun judulnya menyiratkan sebaliknya.]
 
 ## 2.3 Kerangka Berpikir
 

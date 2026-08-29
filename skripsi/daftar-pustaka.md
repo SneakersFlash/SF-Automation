@@ -8,6 +8,10 @@ Borse, N. S., Chatta Subramaniam, R., & Rebello, N. S. (2025). Investigation of 
       inter-rater reliability between large language models and human raters in qualitative
       analysis. Dalam *Physics Education Research Conference 2025*.
       https://arxiv.org/abs/2508.14764
+Bramantyo, S. B., Dewi, I. N., Reza, I. M., Saputra, F. O., & Hasibuan, Z. A. (2025).
+      Pengembangan arsitektur REST API untuk integrasi data real-time pada website
+      pemantauan kualitas udara lahan pertanian. *Transmisi: Jurnal Ilmiah Teknik Elektro,
+      27*(1), 49-56. https://doi.org/10.14710/transmisi.27.1.49-56
 Chu, M.-L., Terhorst, L., Reed, K., Ni, T., Chen, W., & Lin, R. (2025). LLM-based
       multi-agent system for simulating and analyzing marketing and consumer behavior.
       Dalam *2025 IEEE International Conference on e-Business Engineering (ICEBE)*.
@@ -54,6 +58,10 @@ Priyono, P., Alam, N., Arfian, A., Bastari, J., & Lubis, B. O. (2025). Penerapan
 Purpura, A., Chen, E., & Shinde, S. (2025). A multi-stage workflow for the review of
       marketing content with reasoning large language models. *arXiv*.
       https://arxiv.org/abs/2601.06054
+Putra, I. A., Basit, A. A., & Avrianto, A. (2025). Pengaruh strategi digital marketing dan
+      content marketing dalam meningkatkan kinerja pemasaran Viera Sutra Alam. *Jurnal
+      Ilmiah Manajemen, Ekonomi, & Akuntansi (MEA), 9*(2), 2520-2534.
+      https://doi.org/10.31955/mea.v9i2.5979
 Rahman, F., Choirunnisa, Z., & Putra, Y. A. N. S. (2025). Penggunaan large language models
       (LLM) dalam penulisan artikel berita: Sebuah analisis deskriptif berbasis literature
       review. *Promedia: Public Relation dan Media Komunikasi, 11*(2), 370-391.
@@ -61,6 +69,14 @@ Rasim, R., Mugiarso, M., Handayani, D., & Lubis, H. (2025). Rancang bangun siste
       informasi monitoring dan analisis kinerja penjualan menggunakan metode rapid
       application development (RAD). *Journal of Information System, Informatics and
       Computing, 9*(2), 266-274. https://doi.org/10.52362/jisicom.v9i2.2078
+Renanti, M. D., Pratini, C. N. P., Nisrina, S. N. A., Zaki, F. M., Luthfiana, D. E., &
+      Baruna A., M. E. (2025). Optimalisasi desain basis data e-commerce untuk menjamin
+      integritas data (studi kasus: web e-commerce Rie.charge). *Jurnal CoSciTech, 6*(3),
+      444-452. https://doi.org/10.37859/coscitech.v6i3.10643
+Rospricilia, T. A., & Ma'ady, M. N. P. (2024). Pemodelan integration use case (IUC):
+      Perancangan use case diagram (UML) untuk sistem-sistem yang terintegrasi. *INTEGER:
+      Journal of Information Technology, 9*(2).
+      https://doi.org/10.31284/j.integer.2024.v9i2.6345
 Tran, K.-T., Dao, D., Nguyen, M.-D., Pham, Q.-V., O'Sullivan, B., & Nguyen, H. D. (2025).
       Multi-agent collaboration mechanisms: A survey of LLMs. *arXiv*.
       https://arxiv.org/abs/2501.06322
