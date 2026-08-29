@@ -94,7 +94,9 @@ d. Eksperimen, berupa penghasilan naskah menggunakan sistem untuk kemudian dinil
 
 Populasi penelitian ini adalah seluruh materi konten pemasaran yang diproduksi SneakersFlash pada periode penelitian. Sampel diambil secara sengaja dengan mempertimbangkan keterwakilan format unggahan.
 
-[BUTUH KEPUTUSAN PENULIS: tentukan jumlah naskah yang diuji, jumlah penilai, dan asal penilai. Angka ini menentukan uji statistik yang dapat dipakai pada sub-bab 3.2.6. Jumlah penilai minimal tiga orang; penilai dari luar tim jauh lebih kuat menahan keberatan mengenai keberpihakan.]
+Instrumen penilaian telah disusun terlebih dahulu dan disajikan pada Tabel 3.2, sedangkan penetapan jumlah naskah yang diuji beserta jumlah dan asal penilai dilakukan setelah materi konten pada kanal media sosial terkumpul.
+
+[BUTUH KEPUTUSAN PENULIS: tetapkan jumlah naskah yang diuji serta jumlah dan asal penilai setelah materi terkumpul. Jumlah penilai sekurang-kurangnya tiga orang, dan penilai dari luar tim jauh lebih kuat menahan keberatan mengenai keberpihakan.]
 
 Data durasi penyiapan konten sebelum sistem diterapkan diperoleh sebagai estimasi retrospektif dari praktik kerja tim, yaitu satu sampai tiga jam per materi dengan kasus ekstrem mencapai dua belas jam, dan kebutuhan penerbitan lima materi per hari. Data tersebut bukan catatan waktu yang terekam sistem, sehingga diperlakukan sebagai rentang, bukan sebagai nilai tunggal yang presisi. Durasi pada proses baru diukur langsung selama penelitian berlangsung menggunakan lembar catat waktu.
 
@@ -102,17 +104,22 @@ Data durasi penyiapan konten sebelum sistem diterapkan diperoleh sebagai estimas
 
 Penelitian ini menggunakan dua instrumen. Instrumen pertama adalah lembar catat waktu yang merekam durasi penyiapan materi konten untuk setiap peluncuran produk, baik pada proses lama maupun pada proses yang menggunakan sistem.
 
-Instrumen kedua adalah rubrik penilaian konsistensi *brand voice* yang disajikan pada Tabel 3.2. Dimensi rubrik diturunkan dari bidang yang tersimpan pada profil merek di dalam sistem, sehingga penilaian dapat ditelusuri kembali ke acuan yang benar-benar dipakai sistem. Setiap dimensi dinilai pada rentang 1 sampai 4 sehingga skor maksimal seluruh dimensi adalah 20.
+Instrumen kedua adalah matriks penilaian konsistensi *brand voice* yang disajikan pada Tabel 3.2. Dimensi matriks diturunkan dari bidang yang tersimpan pada profil merek di dalam sistem, sehingga penilaian dapat ditelusuri kembali ke acuan yang benar-benar dipakai sistem saat menghasilkan naskah. Setiap dimensi dinilai pada rentang 1 sampai 4, sehingga skor maksimal seluruh dimensi adalah 20.
 
-| Dimensi | Indikator yang dinilai | Rentang skor |
-| --- | --- | --- |
-| Gaya bahasa | Kesesuaian nada, sapaan, dan tingkat formalitas dengan gaya bahasa yang ditetapkan profil merek | 1 sampai 4 |
-| Sasaran audiens | Kesesuaian pilihan diksi dan rujukan budaya dengan audiens yang ditetapkan | 1 sampai 4 |
-| Keunggulan produk | Ketepatan penonjolan keunggulan produk sesuai profil merek | 1 sampai 4 |
-| Kepatuhan batasan | Ketaatan pada batasan penulisan yang ditetapkan, misalnya larangan klaim berlebihan | 1 sampai 4 |
-| Ajakan bertindak | Ketepatan bentuk dan penempatan ajakan bertindak | 1 sampai 4 |
+Deskriptor pada setiap tingkat skor ditulis secara operasional agar penilai tidak perlu menafsirkan sendiri batas antar-tingkat. Hal ini penting karena penilaian dilakukan oleh lebih dari satu orang secara mandiri, dan kesepakatan antar-penilai hanya bermakna bila seluruh penilai membaca ukuran yang sama.
 
-[CATATAN UNTUK PENULIS: dimensi rubrik di atas diturunkan dari struktur profil merek pada sistem, bukan dari pustaka. Setelah sub-bab 2.2.4 memperoleh rujukan akademik mengenai *brand voice*, rubrik ini wajib ditinjau ulang agar dimensinya berpijak pada teori, dan validitas isinya sebaiknya ditelaah oleh dosen pembimbing.]
+|: 1600 1584 1584 1584 1584
+| Dimensi | Skor 1 | Skor 2 | Skor 3 | Skor 4 |
+| --- | --- | --- | --- | --- |
+| Gaya bahasa | Nada dan tingkat formalitas menyimpang jelas dari profil merek | Terdapat pergeseran nada yang mencolok pada sebagian kalimat | Nada sesuai secara keseluruhan dengan satu atau dua penyimpangan kecil | Nada, sapaan, dan tingkat formalitas konsisten di seluruh teks |
+| Sasaran audiens | Diksi dan rujukan tidak sesuai audiens yang ditetapkan | Sebagian diksi sesuai, sebagian terasa salah sasaran | Sesuai audiens dengan sedikit istilah yang kurang tepat | Diksi dan rujukan tepat sasaran di seluruh teks |
+| Keunggulan produk | Keunggulan tidak disebut atau disebut keliru | Keunggulan disebut namun tertukar dengan atribut umum | Keunggulan utama tersampaikan meski kurang tajam | Keunggulan utama tersampaikan jelas sesuai profil merek |
+| Kepatuhan batasan | Melanggar lebih dari satu batasan penulisan | Melanggar satu batasan penulisan | Tidak melanggar namun mendekati batas pada satu bagian | Seluruh batasan penulisan dipatuhi |
+| Ajakan bertindak | Tidak ada ajakan bertindak atau tidak relevan | Ada namun bentuknya tidak sesuai profil merek | Sesuai namun penempatannya kurang tepat | Bentuk dan penempatan sesuai profil merek |
+
+Skor total setiap naskah dikelompokkan ke dalam empat kategori, yaitu 17 sampai 20 sangat konsisten, 13 sampai 16 konsisten, 9 sampai 12 cukup konsisten, dan 5 sampai 8 tidak konsisten. Batas kategori tersebut bersifat usulan dan perlu ditinjau bersama dosen pembimbing sebelum penilaian dimulai.
+
+[CATATAN UNTUK PENULIS: dimensi matriks diturunkan dari struktur profil merek pada sistem, bukan dari pustaka. Setelah sub-bab 2.2.4 memperoleh definisi baku *brand voice*, tinjau kembali apakah kelima dimensi ini sudah mewakili konsep tersebut. Validitas isi matriks sebaiknya ditelaah dosen pembimbing sebelum dipakai.]
 
 ### 3.2.5. Rancangan Pengujian
 
@@ -154,15 +161,14 @@ Pada fase ini sistem dialihkan ke lingkungan operasional. Kegiatan yang dilakuka
 
 ## 3.4 Jadwal Penelitian
 
-Jadwal penelitian disusun mulai dari persiapan sampai penulisan laporan sebagaimana disajikan pada Tabel 3.3. Tanda silang menunjukkan bulan pelaksanaan setiap kegiatan.
+Jadwal penelitian disusun mulai dari persiapan sampai penulisan laporan, terhitung sejak September 2026 sampai Januari 2027, sebagaimana disajikan pada Tabel 3.3. Tanda silang menunjukkan bulan pelaksanaan setiap kegiatan.
 
-| Kegiatan | Bulan ke-1 | Bulan ke-2 | Bulan ke-3 | Bulan ke-4 | Bulan ke-5 |
+| Kegiatan | Sep 2026 | Okt 2026 | Nov 2026 | Des 2026 | Jan 2027 |
 | --- | --- | --- | --- | --- | --- |
 | Studi literatur dan penyusunan proposal | X | X | | | |
 | Pengumpulan data dan wawancara | | X | X | | |
 | Analisis kebutuhan dan perancangan | | | X | | |
 | Implementasi dan penyempurnaan sistem | | | X | X | |
-| Pengujian waktu dan penilaian rubrik | | | | X | |
+| Pengumpulan materi dan penilaian rubrik | | | | X | |
+| Pengukuran waktu produksi konten | | | | X | |
 | Analisis hasil dan penyusunan laporan | | | | X | X |
-
-[BUTUH KEPUTUSAN PENULIS: jadwal di atas masih berupa usulan berdurasi lima bulan. Sesuaikan bulan awal dan bulan akhir dengan tanggal mulai penelitian serta target seminar proposal yang sebenarnya, lalu ganti judul kolom menjadi nama bulan.]

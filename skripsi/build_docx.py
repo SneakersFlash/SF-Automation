@@ -18,6 +18,7 @@ Subset Markdown yang dikenali:
   ## 1.1 Latar Belakang   -> judul sub-bab
   ### 2.2.1. Judul        -> judul sub-sub-bab
   | a | b |               -> tabel (baris pertama jadi kepala tabel)
+  |: 2100 1459 1459       -> lebar kolom (twips) untuk tabel berikutnya
   a. teks                 -> butir daftar (huruf kecil, sesuai pedoman)
   *teks*                  -> cetak miring
   [TEKS DALAM KURUNG]     -> ditebalkan agar mudah dicari saat penyuntingan
@@ -101,10 +102,12 @@ def sel(text, *, header=False, width=1417):
     return f"<w:tc>{pr}{p}</w:tc>"
 
 
-def tabel(rows):
+def tabel(rows, lebar_khusus=None):
     """rows: list of list[str]; baris pertama = kepala tabel."""
     n = max(len(r) for r in rows)
-    if n == len(KOLOM):
+    if lebar_khusus and len(lebar_khusus) == n:
+        lebar = list(lebar_khusus)
+    elif n == len(KOLOM):
         lebar = list(KOLOM)                       # bentuk Tabel 2.1
     else:
         # tabel "label + data": kolom pertama 30%, sisanya dibagi rata
@@ -154,7 +157,7 @@ def blok_pustaka(path):
 
 
 def parse(md):
-    body, prev, buf = [], None, []
+    body, prev, buf, lebar_next = [], None, [], []
 
     def flush():
         """Keluarkan tabel yang tertampung; buang baris pemisah |---|."""
@@ -163,9 +166,10 @@ def parse(md):
         rows = [r for r in buf
                 if not all(set(c) <= set("-: ") for c in r)]
         if rows:
-            body.append(tabel(rows))
+            body.append(tabel(rows, lebar_next or None))
             body.append(para("", jc="both"))
         buf.clear()
+        lebar_next.clear()
 
     for raw in md.splitlines():
         line = raw.strip()
@@ -192,6 +196,11 @@ def parse(md):
             body.append(para("", jc="both"))
             body.append(para(line[4:].strip(), jc="left", bold=True))
             prev = "subsubbab"
+            continue
+
+        if line.startswith("|:"):
+            lebar_next[:] = [int(x) for x in line[2:].replace(",", " ").split()]
+            prev = "lebar"
             continue
 
         if line.startswith("|"):
