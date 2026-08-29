@@ -124,6 +124,35 @@ def tabel(rows):
     return "<w:tbl>" + "".join(out) + "</w:tbl>"
 
 
+HANGING = 720                   # 0,5 inci, indensi gantung gaya APA
+
+
+def ganti_halaman():
+    return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
+
+
+def baca_entri_pustaka(path):
+    """Gabungkan baris bersambung jadi satu entri (baris lanjutan menjorok)."""
+    entri = []
+    for baris in open(path, encoding="utf-8").read().splitlines():
+        if not baris.strip() or baris.strip().upper() in ("DAFTAR PUSTAKA", "REFERENSI"):
+            continue
+        if baris[:1].isspace() and entri:
+            entri[-1] += " " + baris.strip()
+        else:
+            entri.append(baris.strip())
+    return [re.sub(r"\s+", " ", e) for e in entri]
+
+
+def blok_pustaka(path):
+    out = [para("DAFTAR PUSTAKA", jc="center", bold=True, size=SZ_BAB),
+           para("", jc="both")]
+    for e in baca_entri_pustaka(path):
+        # Pedoman menuntut rata kiri-kanan dan tidak mengecualikan daftar pustaka.
+        out.append(para(e, jc="both", left=HANGING, hanging=HANGING))
+    return "".join(out)
+
+
 def parse(md):
     body, prev, buf = [], None, []
 
@@ -194,9 +223,11 @@ def parse(md):
     return "".join(body)
 
 
-def build(md_path, out_path):
-    md = open(md_path, encoding="utf-8").read()
-    body = parse(md)
+def build(md_paths, out_path, pustaka=None):
+    bagian = [parse(open(m, encoding="utf-8").read()) for m in md_paths]
+    if pustaka:
+        bagian.append(blok_pustaka(pustaka))
+    body = ganti_halaman().join(bagian)
 
     sect = (f'<w:sectPr><w:pgSz w:w="{A4_W}" w:h="{A4_H}"/>'
             f'<w:pgMar w:top="{MAR["top"]}" w:right="{MAR["right"]}" '
@@ -247,21 +278,33 @@ def build(md_path, out_path):
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("-")]
-    out = None
-    if "-o" in sys.argv:
-        i = sys.argv.index("-o")
-        if i + 1 >= len(sys.argv):
-            sys.exit("ERROR: -o butuh nama berkas keluaran")
-        out = sys.argv[i + 1]
-        args = [a for a in args if a != out]
-    if len(args) != 1:
-        sys.exit("Pemakaian: python3 build_docx.py <sumber.md> [-o keluaran.docx]")
+    argv = sys.argv[1:]
+    out, pustaka, src = None, None, []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a in ("-o", "--pustaka"):
+            if i + 1 >= len(argv):
+                sys.exit(f"ERROR: {a} butuh nilai")
+            if a == "-o":
+                out = argv[i + 1]
+            else:
+                pustaka = argv[i + 1]
+            i += 2
+            continue
+        if a.startswith("-"):
+            sys.exit(f"ERROR: opsi tidak dikenal: {a}")
+        src.append(a)
+        i += 1
 
-    src = args[0]
-    out = out or src.rsplit(".", 1)[0] + ".docx"
-    build(src, out)
-    print(f"OK  {src} -> {out}")
+    if not src:
+        sys.exit("Pemakaian: python3 build_docx.py <sumber.md> [sumber2.md ...] "
+                 "[--pustaka daftar-pustaka.md] [-o keluaran.docx]")
+
+    out = out or src[0].rsplit(".", 1)[0] + ".docx"
+    build(src, out, pustaka)
+    ket = f" + {pustaka}" if pustaka else ""
+    print(f"OK  {' + '.join(src)}{ket} -> {out}")
 
 
 if __name__ == "__main__":

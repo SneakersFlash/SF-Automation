@@ -19,6 +19,7 @@ Judul:
 | `bab-1-pendahuluan.md` | **Sumber tunggal** BAB I. Sunting yang ini. |
 | `bab-2-tinjauan-pustaka.md` | **Sumber tunggal** BAB II. |
 | `bab-3-metode-penelitian.md` | **Sumber tunggal** BAB III. |
+| `proposal-skripsi-bab-1-3.docx` | **Dokumen gabungan** BAB I–III + Daftar Pustaka. Ini yang diserahkan. |
 | `daftar-pustaka.md` | Rujukan terverifikasi, gaya APA. Tumbuh seiring bab bertambah. |
 | `*.docx` | Hasil rakitan, format sudah sesuai pedoman. Jangan disunting langsung — akan tertimpa. |
 | `build_docx.py` | Perakit `.md` → `.docx`. Stdlib saja, tanpa dependensi. |
@@ -34,6 +35,11 @@ cd skripsi
 python3 build_docx.py bab-1-pendahuluan.md
 python3 build_docx.py bab-2-tinjauan-pustaka.md
 python3 build_docx.py bab-3-metode-penelitian.md
+
+# dokumen gabungan (ganti halaman antar-bab + Daftar Pustaka)
+python3 build_docx.py bab-1-pendahuluan.md bab-2-tinjauan-pustaka.md \
+        bab-3-metode-penelitian.md --pustaka daftar-pustaka.md \
+        -o proposal-skripsi-bab-1-3.docx
 ```
 
 Mesin ini tidak punya pandoc, libreoffice, maupun python-docx, jadi `build_docx.py`
@@ -46,16 +52,32 @@ S=~/.claude/skills/skripsi-unpam-si/scripts
 python3 $S/cek_format_docx.py skripsi/bab-1-pendahuluan.docx
 python3 $S/cek_format_docx.py skripsi/bab-2-tinjauan-pustaka.docx
 python3 $S/cek_format_docx.py skripsi/bab-3-metode-penelitian.docx
-python3 $S/cek_pustaka.py     skripsi/daftar-pustaka.md --tahun 2026
+python3 $S/cek_format_docx.py skripsi/proposal-skripsi-bab-1-3.docx
+python3 $S/cek_pustaka.py skripsi/daftar-pustaka.md --tahun 2026 \
+        --teks skripsi/bab-1-pendahuluan.md \
+        --teks skripsi/bab-2-tinjauan-pustaka.md \
+        --teks skripsi/bab-3-metode-penelitian.md
 ```
 
-Hasil terakhir: **BAB I, II, dan III sama-sama LULUS 12, GAGAL 0** — A4, margin 4/3/3/3 cm,
+Hasil terakhir: **ketiga bab dan dokumen gabungan sama-sama LULUS 12, GAGAL 0** — A4, margin 4/3/3/3 cm,
 Times New Roman 12, rata kiri-kanan, spasi 1,5, before/after 0 pt, judul bab TNR 14 kapital
 bold. Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
 aturan spasi 1,5.
 
 Audit daftar pustaka: **8 entri, 0 temuan** — seluruhnya terbitan 2025, urutan alfabetis
-benar, tidak ada entri ganda, tidak ada yang melewati batas usia.
+benar, tidak ada entri ganda, tidak ada yang melewati batas usia. Pemeriksaan silang
+teks terhadap daftar pustaka juga bersih dua arah: tidak ada sitasi yang menggantung,
+dan tidak ada entri yang tidak pernah disitasi.
+
+**Gaya APA yang diterapkan.** Daftar pustaka memakai indensi gantung 0,5 inci, judul
+artikel *sentence case*, nama jurnal dan nomor volume dicetak miring, nomor terbitan
+dalam kurung tidak miring, dan entri berakhir DOI/URL tidak diberi titik. Sitasi dalam
+teks memakai bentuk naratif (`Tran dkk. (2025)`) dan bentuk kurung (`(Tran dkk., 2025)`).
+Singkatan `dkk.` dipakai sebagai padanan *et al.* karena naskah berbahasa Indonesia —
+ganti bila dosen pembimbing meminta *et al.*
+
+Entri daftar pustaka dirata kiri-kanan karena pedoman menuntut *justify* dan tidak
+mengecualikan daftar pustaka, meskipun APA sendiri lazimnya rata kiri.
 
 Yang **tidak** diperiksa script dan harus dicek manual di Word: posisi nomor halaman,
 penomoran Romawi kecil bagian awal, jarak antar-judul, indentasi alinea, dan cetak miring
