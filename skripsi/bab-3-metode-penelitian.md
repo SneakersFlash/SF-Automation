@@ -96,7 +96,7 @@ Populasi penelitian ini adalah seluruh materi konten pemasaran yang diproduksi S
 
 [BUTUH KEPUTUSAN PENULIS: tentukan jumlah naskah yang diuji, jumlah penilai, dan asal penilai. Angka ini menentukan uji statistik yang dapat dipakai pada sub-bab 3.2.6. Jumlah penilai minimal tiga orang; penilai dari luar tim jauh lebih kuat menahan keberatan mengenai keberpihakan.]
 
-[BUTUH KEPUTUSAN PENULIS: nyatakan bentuk data sebelum-sesudah yang dimiliki, apakah berupa catatan tertulis, catatan sistem, atau perkiraan. Bila berupa perkiraan, hal tersebut wajib dinyatakan sebagai keterbatasan penelitian dan uji statistik parametrik tidak dapat dipakai.]
+Data durasi penyiapan konten sebelum sistem diterapkan diperoleh sebagai estimasi retrospektif dari praktik kerja tim, yaitu satu sampai tiga jam per materi dengan kasus ekstrem mencapai dua belas jam, dan kebutuhan penerbitan lima materi per hari. Data tersebut bukan catatan waktu yang terekam sistem, sehingga diperlakukan sebagai rentang, bukan sebagai nilai tunggal yang presisi. Durasi pada proses baru diukur langsung selama penelitian berlangsung menggunakan lembar catat waktu.
 
 ### 3.2.4. Instrumen Penelitian
 
@@ -128,7 +128,7 @@ Pengujian fungsional sistem dilakukan menggunakan metode *black box* untuk memas
 
 ### 3.2.6. Metode Analisis Data
 
-Data waktu produksi konten dianalisis menggunakan statistik deskriptif berupa rata-rata dan simpangan baku, kemudian dibandingkan antara proses lama dan proses baru menggunakan uji beda yang sesuai dengan sebaran data dan jumlah sampel. Data skor rubrik dianalisis menggunakan statistik deskriptif per dimensi, kemudian dibandingkan antara naskah yang dihasilkan dengan konteks merek dan tanpa konteks merek. Kesepakatan antar-penilai dihitung menggunakan koefisien kesepakatan yang sesuai dengan jumlah penilai dan skala penilaian.
+Data waktu produksi konten dianalisis menggunakan statistik deskriptif berupa nilai terendah, nilai tertinggi, median, dan rentang. Nilai median dan rentang dipilih sebagai ukuran utama karena data pada proses lama berupa estimasi retrospektif dengan sebaran yang lebar, sehingga rata-rata aritmetik mudah terdistorsi oleh kasus ekstrem. Pembandingan antara proses lama dan proses baru dilakukan secara deskriptif dan tidak menggunakan uji statistik parametrik, karena syarat pengukuran yang setara pada kedua kelompok tidak terpenuhi. Selain durasi, penyempitan rentang durasi turut dilaporkan sebagai indikator meningkatnya keterdugaan proses. Data skor rubrik dianalisis menggunakan statistik deskriptif per dimensi, kemudian dibandingkan antara naskah yang dihasilkan dengan konteks merek dan tanpa konteks merek. Kesepakatan antar-penilai dihitung menggunakan koefisien kesepakatan yang sesuai dengan jumlah penilai dan skala penilaian.
 
 Perlu ditegaskan bahwa perbandingan waktu dilakukan antara proses lama secara keseluruhan dan proses baru secara keseluruhan. Penelitian ini tidak mengklaim bahwa penurunan waktu semata-mata disebabkan arsitektur *multi-agent*, karena antarmuka terpusat diterapkan bersamaan dengan arsitektur tersebut. Keterbatasan ini telah dinyatakan pada sub-bab 1.4.
 
