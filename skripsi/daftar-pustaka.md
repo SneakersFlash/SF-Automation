@@ -25,6 +25,9 @@ Hashemi, H., Eisner, J., Rosset, C., Van Durme, B., & Kedzie, C. (2024). LLM-Rub
       texts. Dalam *Proceedings of the 62nd Annual Meeting of the Association for
       Computational Linguistics (Volume 1: Long Papers)* (hlm. 13806-13834).
       https://arxiv.org/abs/2501.00274
+Ibrahim, F. N., & Abdurrahman, A. (2025). Pengaruh promosi dan brand image melalui media
+      sosial terhadap keputusan pembelian sepatu olahraga. *Selekta Manajemen: Jurnal
+      Mahasiswa Bisnis & Manajemen, 3*(2), 65-75.
 Kirkby, A., Baumgarth, C., & Henseler, J. (2023). To disclose or not disclose, is no longer
       the question: Effect of AI-disclosed brand voice on brand authenticity and attitude.
       *Journal of Product & Brand Management, 32*(7), 1108-1122.
@@ -33,6 +36,10 @@ Lin, Y.-C., Chen, K.-C., Li, Z.-Y., Wu, T.-H., Wu, T.-H., Chen, K.-Y., Lee, H., 
       Y.-N. (2025). Creativity in LLM-based multi-agent systems: A survey. Dalam
       *Proceedings of the 2025 Conference on Empirical Methods in Natural Language
       Processing*. https://arxiv.org/abs/2505.21116
+Lubis, K. L., Nasution, L. N., & Sari, W. I. (2025). Pengaruh penggunaan transaksi digital
+      di berbagai e-commerce terhadap pertumbuhan ekonomi di Indonesia. *Jurnal Publikasi
+      Ekonomi dan Akuntansi (JUPEA), 5*(3), 315-322.
+      https://doi.org/10.51903/jupea.v5i3.4329
 Nugroho, I. F., Wahyono, A., & Setiawati, D. (2024). Rancang bangun sistem informasi pusat
       data berbasis website menggunakan metode prototype. *Explore: Jurnal Sistem Informasi
       dan Telematika, 15*(2). https://doi.org/10.36448/jsit.v15i2.3788
