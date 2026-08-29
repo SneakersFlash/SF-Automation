@@ -18,6 +18,7 @@ Judul:
 |---|---|
 | `bab-1-pendahuluan.md` | **Sumber tunggal** BAB I. Sunting yang ini. |
 | `bab-2-tinjauan-pustaka.md` | **Sumber tunggal** BAB II. |
+| `bab-3-metode-penelitian.md` | **Sumber tunggal** BAB III. |
 | `daftar-pustaka.md` | Rujukan terverifikasi, gaya APA. Tumbuh seiring bab bertambah. |
 | `*.docx` | Hasil rakitan, format sudah sesuai pedoman. Jangan disunting langsung — akan tertimpa. |
 | `build_docx.py` | Perakit `.md` → `.docx`. Stdlib saja, tanpa dependensi. |
@@ -32,6 +33,7 @@ Subset Markdown yang dikenali perakit: `# BAB I ...` (judul bab, dipecah dua bar
 cd skripsi
 python3 build_docx.py bab-1-pendahuluan.md
 python3 build_docx.py bab-2-tinjauan-pustaka.md
+python3 build_docx.py bab-3-metode-penelitian.md
 ```
 
 Mesin ini tidak punya pandoc, libreoffice, maupun python-docx, jadi `build_docx.py`
@@ -43,10 +45,11 @@ merakit `.docx` langsung sebagai arsip ZIP berisi OOXML.
 S=~/.claude/skills/skripsi-unpam-si/scripts
 python3 $S/cek_format_docx.py skripsi/bab-1-pendahuluan.docx
 python3 $S/cek_format_docx.py skripsi/bab-2-tinjauan-pustaka.docx
+python3 $S/cek_format_docx.py skripsi/bab-3-metode-penelitian.docx
 python3 $S/cek_pustaka.py     skripsi/daftar-pustaka.md --tahun 2026
 ```
 
-Hasil terakhir: **BAB I dan BAB II sama-sama LULUS 12, GAGAL 0** — A4, margin 4/3/3/3 cm,
+Hasil terakhir: **BAB I, II, dan III sama-sama LULUS 12, GAGAL 0** — A4, margin 4/3/3/3 cm,
 Times New Roman 12, rata kiri-kanan, spasi 1,5, before/after 0 pt, judul bab TNR 14 kapital
 bold. Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
 aturan spasi 1,5.
@@ -88,8 +91,23 @@ Catatan verifikasi: jurnal Promedia menuliskan nama penulis yang berbeda pada bl
 sitasi bawaannya ("Yudianto, Ferdi") dibanding *byline* artikelnya (Rahman, Choirunnisa,
 Putra). Daftar pustaka di sini memakai nama pada *byline*. Konfirmasikan bila ragu.
 
-Belum dikerjakan: BAB III dan Bagian Awal (Halaman Judul, Daftar Isi, Daftar Gambar,
-Daftar Tabel).
+Pada BAB III terdapat tiga penanda: dua `[BUTUH KEPUTUSAN PENULIS]` di 3.2.3 (jumlah
+naskah uji, jumlah dan asal penilai, bentuk data sebelum-sesudah), satu di 3.4 (jadwal
+masih usulan lima bulan), dan satu `[CATATAN UNTUK PENULIS]` di 3.2.4 (dimensi rubrik
+diturunkan dari struktur profil merek, belum dari pustaka).
+
+**Gambar yang harus digambar sendiri** — naskah sudah merujuknya, berkasnya belum ada:
+
+| Gambar | Isi | Sub-bab |
+|---|---|---|
+| 2.1 | Kerangka berpikir | 2.3 |
+| 3.1 | *Activity diagram* sistem berjalan | 3.1.1. |
+| 3.2 | Arsitektur sistem usulan | 3.1.3. |
+| 3.3 | *Use case diagram* | 3.1.3. |
+| 3.4 | *Entity relationship diagram* | 3.1.3. |
+| 3.5 | Tahapan RAD | 3.3 |
+
+Belum dikerjakan: Bagian Awal (Halaman Judul, Daftar Isi, Daftar Gambar, Daftar Tabel).
 
 Empat keputusan yang masih menahan BAB III: metode pengembangan sistem, bentuk dan jumlah
 data sebelum-sesudah, jumlah serta asal penilai rubrik, dan jadwal penelitian.

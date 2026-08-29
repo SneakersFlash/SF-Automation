@@ -104,7 +104,12 @@ def sel(text, *, header=False, width=1417):
 def tabel(rows):
     """rows: list of list[str]; baris pertama = kepala tabel."""
     n = max(len(r) for r in rows)
-    lebar = KOLOM[:n] if n <= len(KOLOM) else [7937 // n] * n
+    if n == len(KOLOM):
+        lebar = list(KOLOM)                       # bentuk Tabel 2.1
+    else:
+        # tabel "label + data": kolom pertama 30%, sisanya dibagi rata
+        satu = round(7937 * 0.30)
+        lebar = [satu] + [(7937 - satu) // (n - 1)] * (n - 1) if n > 1 else [7937]
     borders = ("<w:tblBorders>" + "".join(
         f'<w:{sisi} w:val="single" w:sz="4" w:color="000000"/>'
         for sisi in ("top", "left", "bottom", "right", "insideH", "insideV")
