@@ -42,6 +42,10 @@ Kirkby, A., Baumgarth, C., & Henseler, J. (2023). To disclose or not disclose, i
       the question: Effect of AI-disclosed brand voice on brand authenticity and attitude.
       *Journal of Product & Brand Management, 32*(7), 1108-1122.
       https://doi.org/10.1108/JPBM-02-2022-3864
+Kirkby, A., Baumgarth, C., & Henseler, J. (2025). Welcome, new brand colleague! A
+      conceptual framework for efficient and effective human-AI co-creation for creative
+      brand voice. *Journal of Brand Management, 32*(5), 385-399.
+      https://doi.org/10.1057/s41262-025-00387-y
 Lin, Y.-C., Chen, K.-C., Li, Z.-Y., Wu, T.-H., Wu, T.-H., Chen, K.-Y., Lee, H., & Chen,
       Y.-N. (2025). Creativity in LLM-based multi-agent systems: A survey. Dalam
       *Proceedings of the 2025 Conference on Empirical Methods in Natural Language

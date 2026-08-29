@@ -73,11 +73,13 @@ Penerapan pendekatan *multi-agent* pada ranah pemasaran telah ditunjukkan Chu dk
 
 ### 2.2.4. Brand Voice dan Konsistensi Identitas Merek
 
-*Brand voice* adalah cara sebuah merek berbicara kepada audiensnya, yang tercermin pada nada, pilihan kata, dan tingkat formalitas yang digunakan secara konsisten di seluruh titik sentuh. Kirkby dkk. (2023) meneliti keaslian *brand voice* dalam kaitannya dengan keaslian merek dan sikap terhadap merek, dan menemukan melalui eksperimen 3x3 terhadap 624 responden bahwa teks yang dinyatakan dihasilkan kecerdasan buatan tidak dipersepsikan kurang autentik dibanding teks yang dinyatakan ditulis manusia. Temuan tersebut menunjukkan bahwa yang menentukan persepsi bukan sumber teksnya, melainkan kesesuaian teks dengan suara merek yang telah dikenal audiens.
+*Brand voice* adalah apa yang diproyeksikan sebuah merek dan pada akhirnya dipersepsikan oleh penerima yang dituju, mencakup sikap, nada suara, pilihan bahasa, dan tipografi. Definisi tersebut dirujuk Kirkby dkk. (2023) dari Kohli dan Yen dalam kajian mereka mengenai keaslian *brand voice*. Dengan kata lain, *brand voice* bukan sekadar apa yang ditulis merek, melainkan kesan yang tertangkap audiens dari cara merek itu menulis.
+
+Kirkby dkk. (2023) meneliti keaslian *brand voice* dalam kaitannya dengan keaslian merek dan sikap terhadap merek, dan menemukan melalui eksperimen 3x3 terhadap 624 responden bahwa teks yang dinyatakan dihasilkan kecerdasan buatan tidak dipersepsikan kurang autentik dibanding teks yang dinyatakan ditulis manusia. Temuan tersebut menunjukkan bahwa yang menentukan persepsi bukan sumber teksnya, melainkan kesesuaian teks dengan suara merek yang telah dikenal audiens.
 
 Kesesuaian tersebut tidak terbentuk dengan sendirinya. Wang dkk. (2025) menemukan bahwa model bahasa besar kesulitan meniru gaya menulis yang tidak dinyatakan secara eksplisit, terutama gaya informal. Oleh karena itu penelitian ini memperlakukan *brand voice* sebagai sekumpulan ketentuan tertulis dan terstruktur yang disertakan sebagai konteks, bukan sebagai gaya yang diharapkan tertangkap sendiri oleh model dari contoh naskah.
 
-[SITASI DIBUTUHKAN: satu definisi baku *brand voice* dari buku *branding* atau jurnal manajemen pemasaran untuk memperkuat kalimat pembuka. Sisi pengujiannya sudah ditopang Kirkby dkk. (2023); yang belum ada hanya definisi formalnya.]
+Kirkby dkk. (2025) selanjutnya menyusun kerangka konseptual bagi ko-kreasi manusia dan kecerdasan buatan dalam menghasilkan *brand voice* yang kreatif. Arah tersebut sejalan dengan rancangan penelitian ini, yang menempatkan agen kecerdasan buatan pada penyusunan awal materi sementara manusia tetap menjadi pemeriksa akhir sebelum materi diterbitkan.
 
 ### 2.2.5. Otomasi Alur Kerja dan Antrian Tugas
 
