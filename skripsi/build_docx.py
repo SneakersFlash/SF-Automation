@@ -16,6 +16,8 @@ Format yang diterapkan (semuanya dari pedoman):
 Subset Markdown yang dikenali:
   # BAB I PENDAHULUAN     -> judul bab, dipecah dua baris
   ## 1.1 Latar Belakang   -> judul sub-bab
+  ### 2.2.1. Judul        -> judul sub-sub-bab
+  | a | b |               -> tabel (baris pertama jadi kepala tabel)
   a. teks                 -> butir daftar (huruf kecil, sesuai pedoman)
   *teks*                  -> cetak miring
   [TEKS DALAM KURUNG]     -> ditebalkan agar mudah dicari saat penyuntingan
@@ -39,6 +41,8 @@ LIST_LEFT = round(2 * CM)
 LINE = 360                      # spasi 1,5
 SZ_BODY, SZ_BAB = 24, 28        # setengah-poin -> 12 pt dan 14 pt
 FONT = "Times New Roman"
+LINE_TABEL = 240                # tabel pakai spasi 1 (pedoman mengecualikan tabel)
+KOLOM = [1417, 2268, 1417, 1701, 1134]   # lebar kolom default, total 14 cm
 
 NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
 RE_LIST = re.compile(r"^([a-z])\.\s+(.*)$")
@@ -88,12 +92,54 @@ def para(text, *, jc="both", bold=False, size=SZ_BODY,
             f'{ind}</w:pPr>{runs(text, bold=bold, size=size)}</w:p>')
 
 
+def sel(text, *, header=False, width=1417):
+    shd = '<w:shd w:val="clear" w:fill="EDEDED"/>' if header else ""
+    pr = f'<w:tcPr><w:tcW w:w="{width}" w:type="dxa"/>{shd}</w:tcPr>'
+    p = (f'<w:p><w:pPr><w:jc w:val="left"/>'
+         f'<w:spacing w:before="0" w:after="0" w:line="{LINE_TABEL}" '
+         f'w:lineRule="auto"/></w:pPr>{runs(text, bold=header)}</w:p>')
+    return f"<w:tc>{pr}{p}</w:tc>"
+
+
+def tabel(rows):
+    """rows: list of list[str]; baris pertama = kepala tabel."""
+    n = max(len(r) for r in rows)
+    lebar = KOLOM[:n] if n <= len(KOLOM) else [7937 // n] * n
+    borders = ("<w:tblBorders>" + "".join(
+        f'<w:{sisi} w:val="single" w:sz="4" w:color="000000"/>'
+        for sisi in ("top", "left", "bottom", "right", "insideH", "insideV")
+    ) + "</w:tblBorders>")
+    pr = (f'<w:tblPr><w:tblW w:w="{sum(lebar)}" w:type="dxa"/>{borders}</w:tblPr>')
+    out = [pr]
+    for i, row in enumerate(rows):
+        cells = "".join(sel(row[j] if j < len(row) else "",
+                            header=(i == 0), width=lebar[j]) for j in range(n))
+        head = '<w:trPr><w:tblHeader/></w:trPr>' if i == 0 else ""
+        out.append(f"<w:tr>{head}{cells}</w:tr>")
+    return "<w:tbl>" + "".join(out) + "</w:tbl>"
+
+
 def parse(md):
-    body, prev = [], None
+    body, prev, buf = [], None, []
+
+    def flush():
+        """Keluarkan tabel yang tertampung; buang baris pemisah |---|."""
+        if not buf:
+            return
+        rows = [r for r in buf
+                if not all(set(c) <= set("-: ") for c in r)]
+        if rows:
+            body.append(tabel(rows))
+            body.append(para("", jc="both"))
+        buf.clear()
+
     for raw in md.splitlines():
         line = raw.strip()
         if not line:
+            flush()
             continue
+        if not line.startswith("|"):
+            flush()
 
         if line.startswith("# "):
             judul = line[2:].strip()
@@ -106,6 +152,17 @@ def parse(md):
             # jarak akhir judul bab ke teks = 2 x 1,5 spasi
             body.append(para("", jc="both"))
             prev = "bab"
+            continue
+
+        if line.startswith("### "):
+            body.append(para("", jc="both"))
+            body.append(para(line[4:].strip(), jc="left", bold=True))
+            prev = "subsubbab"
+            continue
+
+        if line.startswith("|"):
+            buf.append([c.strip() for c in line.strip("|").split("|")])
+            prev = "tabel"
             continue
 
         if line.startswith("## "):
@@ -128,6 +185,7 @@ def parse(md):
             body.append(para(line, jc="both", first_line=INDENT))
         prev = "para"
 
+    flush()
     return "".join(body)
 
 
