@@ -76,6 +76,12 @@ juga membawa `<w:updateFields>` supaya field disegarkan saat dibuka.
 > Setelah menyisipkan gambar, tekan **Ctrl+A lalu F9** agar seluruh nomor dihitung
 > ulang. Sebelum disegarkan, angka yang tampak hanyalah nilai cadangan.
 
+**Jangan diperiksa lewat Google Docs.** Docs tidak menjalankan field `PAGEREF` dan
+meratakan penomoran per-*section*, sehingga seluruh entri BAB tampak bernomor `1` dan
+aturan Romawi/angka biasa hilang. Buka dengan Microsoft Word (desktop atau Word Online)
+atau LibreOffice Writer — di LibreOffice, segarkan lewat Tools → Update → Update All.
+Berkas serahannya memang `.docx`, jadi yang menentukan adalah tampilan di Word.
+
 ## Satu hal yang tetap manual di Word
 
 **Logo Universitas Pamulang 4 cm x 4 cm** pada halaman judul. Tempatnya sudah
