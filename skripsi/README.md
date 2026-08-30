@@ -55,18 +55,29 @@ Multi-Agent AI untuk Meningkatkan Efisiensi dan Konsistensi Brand Voice \
         -o proposal-skripsi-lengkap.docx
 ```
 
-## Dua hal yang tetap manual di Word
+## Penomoran halaman
 
-Perakit tidak dapat menyisipkan gambar maupun mengatur penomoran halaman:
+Sudah dirakit otomatis sesuai pedoman butir 3.4, jadi tidak perlu diatur manual:
 
-1. **Logo Universitas Pamulang 4 cm x 4 cm** pada halaman judul. Tempatnya sudah
-   ditandai. Logo dapat diambil dari `skripsi .docx` yang diunggah sebelumnya.
-2. **Nomor halaman** — Romawi kecil untuk bagian awal, angka untuk bagian inti,
-   kanan atas kecuali halaman awal bab yang di tengah bawah.
+- **Bagian awal** memakai angka Romawi kecil. Halaman judul dihitung sebagai `i`
+  tetapi nomornya tidak dicetak (mengikuti Contoh 3), sehingga Daftar Isi jatuh di
+  `ii`, Daftar Gambar `iii`, Daftar Tabel `iv` — persis seperti Contoh 4.
+- **Bagian inti dan akhir** memakai angka biasa, dimulai dari 1 di BAB I.
+- **Posisi** nomor di kanan atas, kecuali halaman awal setiap bab yang di tengah
+  bawah. Tiap bab jadi *section* tersendiri dengan `w:titlePg` supaya halaman
+  pertamanya memakai aturan yang berbeda.
 
-Setelah penomoran diatur, isi nomor halaman pada Daftar Isi, Daftar Gambar, dan
-Daftar Tabel. Titik penuntun sudah dipasang sebagai tab rata kanan, jadi angka
-yang diketik langsung menempel rapi di tepi kanan.
+Nomor pada Daftar Isi, Daftar Gambar, dan Daftar Tabel diisi field `PAGEREF` yang
+menunjuk penanda (*bookmark*) di naskah, jadi Word yang menghitung sendiri. Berkas
+juga membawa `<w:updateFields>` supaya field disegarkan saat dibuka.
+
+> Setelah menyisipkan gambar, tekan **Ctrl+A lalu F9** agar seluruh nomor dihitung
+> ulang. Sebelum disegarkan, angka yang tampak hanyalah nilai cadangan.
+
+## Satu hal yang tetap manual di Word
+
+**Logo Universitas Pamulang 4 cm x 4 cm** pada halaman judul. Tempatnya sudah
+ditandai. Logo dapat diambil dari `skripsi .docx` yang diunggah sebelumnya.
 
 Mesin ini tidak punya pandoc, libreoffice, maupun python-docx, jadi `build_docx.py`
 merakit `.docx` langsung sebagai arsip ZIP berisi OOXML.
@@ -85,13 +96,15 @@ python3 $S/cek_pustaka.py skripsi/daftar-pustaka.md --tahun 2026 \
         --teks skripsi/bab-3-metode-penelitian.md
 ```
 
-Hasil terakhir: **ketiga bab dan dokumen gabungan sama-sama LULUS 12, GAGAL 0** — A4, margin 4/3/3/3 cm,
-Times New Roman 12, rata kiri-kanan, spasi 1,5, before/after 0 pt, judul bab TNR 14 kapital
-bold. Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
+Hasil terakhir: **ketiga bab dan dokumen gabungan LULUS 16, GAGAL 0; berkas lengkap
+LULUS 19, GAGAL 0** — A4, margin 4/3/3/3 cm, Times New Roman 12, rata kiri-kanan, spasi 1,5,
+before/after 0 pt, judul bab TNR 14 kapital bold, plus penomoran halaman (Romawi kecil di
+bagian awal, angka biasa mulai 1 di BAB I, kanan atas dan tengah bawah di halaman awal bab).
+Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
 aturan spasi 1,5.
 
-Audit daftar pustaka: **8 entri, 0 temuan** — seluruhnya terbitan 2025, urutan alfabetis
-benar, tidak ada entri ganda, tidak ada yang melewati batas usia. Pemeriksaan silang
+Audit daftar pustaka: **29 entri, 0 temuan** — urutan alfabetis benar, tidak ada entri
+ganda, tidak ada yang melewati batas usia. Pemeriksaan silang
 teks terhadap daftar pustaka juga bersih dua arah: tidak ada sitasi yang menggantung,
 dan tidak ada entri yang tidak pernah disitasi.
 
@@ -105,44 +118,47 @@ ganti bila dosen pembimbing meminta *et al.*
 Entri daftar pustaka dirata kiri-kanan karena pedoman menuntut *justify* dan tidak
 mengecualikan daftar pustaka, meskipun APA sendiri lazimnya rata kiri.
 
-Yang **tidak** diperiksa script dan harus dicek manual di Word: posisi nomor halaman,
-penomoran Romawi kecil bagian awal, jarak antar-judul, indentasi alinea, dan cetak miring
-kata asing.
+Yang **tidak** diperiksa script dan harus dicek manual di Word: jarak antar-judul,
+indentasi alinea, dan cetak miring kata asing. Script memeriksa penomoran halaman lewat
+`sectPr` dan isi header/footer, tetapi tidak merender halaman — angka yang sebenarnya baru
+pasti setelah berkas dibuka dan field disegarkan.
 
 ## Yang masih terbuka
 
-Tiga penanda di dalam naskah wajib diisi sebelum diserahkan ke pembimbing:
+Dua penanda di dalam naskah, keduanya di BAB III, sengaja menunggu materi media sosial
+penulis terkumpul:
 
-- `[SITASI DIBUTUHKAN: ...]` — dua tempat di 1.1. **Tidak ada sitasi yang dikarang.**
-  Isi dengan sumber nyata yang sudah diverifikasi; jurnal maksimal 5 tahun terakhir.
-- `[ANGKA DARI DATA PENELITI: ...]` — satu tempat di 1.1, untuk durasi penyiapan konten
-  sebelum sistem diterapkan.
+- `[BUTUH KEPUTUSAN PENULIS]` di 3.2.3 — jumlah naskah yang diuji serta jumlah dan asal
+  penilai. Penilai sekurang-kurangnya tiga orang; penilai dari luar tim lebih kuat menahan
+  keberatan soal keberpihakan.
+- `[CATATAN UNTUK PENULIS]` di 3.2.4 — dimensi rubrik konsistensi *brand voice* diturunkan
+  dari struktur profil merek pada sistem, belum dari pustaka. Tinjau ulang setelah 2.2.4.
 
-Pada BAB II terdapat `[SITASI DIBUTUHKAN: ...]` di enam sub-sub-bab Landasan Teori dan satu
-`[CATATAN UNTUK PENULIS]` di 2.1.
+Penanda sitasi dan angka data peneliti di BAB I dan BAB II **sudah terisi semua.**
 
-**Status rujukan.** Delapan sumber pada `daftar-pustaka.md` sudah diverifikasi langsung ke
-halaman penerbit, bukan dikutip dari hasil pencarian. Enam di antaranya melalui telaah
-sejawat (EMNLP 2025, IEEE ICEBE 2025, dan empat jurnal Indonesia ber-DOI); **dua sisanya —
-Tran dkk. dan Aghaei dkk. — berstatus *preprint* arXiv, bukan jurnal.** Pedoman menuntut
-rujukan berupa jurnal, jadi pertimbangkan menggantinya atau meminta persetujuan pembimbing.
+**Status rujukan.** `daftar-pustaka.md` berisi **29 entri**, seluruhnya diverifikasi langsung
+ke halaman penerbit (Crossref, DOAJ, Google Books, OJS jurnal) — bukan dari cuplikan hasil
+pencarian. Tidak ada blog pemasaran komersial. Penelitian terdahulu berjumlah **20 studi
+berbeda**: 10 diuraikan sebagai paragraf naratif di 2.1 dan 10 lagi diringkas pada Tabel 2.1.
 
-Penelitian terdahulu kini berjumlah **8**, sudah memenuhi praktik lazim 8–10 sumber.
+**Status sistem: prototipe, masih dalam pengujian — belum dipakai untuk operasional harian.**
+`ai.sneakersflash.com` hanya lingkungan uji coba. Naskah ditulis dengan diksi *perancangan*,
+bukan *pengembangan*, dan batasan masalah butir b menyatakan status ini secara eksplisit.
 
-**Metode pengembangan sistem: RAD** (*Rapid Application Development*), bukan Waterfall.
+**Metode perancangan sistem: RAD** (*Rapid Application Development*), bukan Waterfall.
 Dipilih karena riwayat commit menunjukkan putaran umpan balik yang nyata — `api/src`
 disentuh 92 kali, rasio `fix` terhadap `feat` 10:14, dan `loadBrandContext()` ditambahkan
-setelah sistem sudah tayang karena keluarannya dinilai generik. Rentang pengerjaan
-1 Juli – 29 Agustus 2026 (60 hari) juga cocok dengan siklus pendek RAD.
+setelah keluaran prototipe dinilai generik. Rentang pengerjaan 1 Juli – 29 Agustus 2026
+(60 hari) juga cocok dengan siklus pendek RAD.
+
+Kata *pengembangan* masih tersisa di empat tempat dan **tidak boleh diubah**: judul 3.3
+(dikunci Contoh 4 pedoman), judul 2.2.7 (sengaja sejajar dengan 3.3), definisi RAD yang
+dikutip dari Yunus dkk. (2025), dan judul asli artikel Priyono dkk. (2025) pada Tabel 2.1.
+Tiga yang terakhir adalah kutipan tulisan orang lain — mengubahnya berarti memalsukan sumber.
 
 Catatan verifikasi: jurnal Promedia menuliskan nama penulis yang berbeda pada blok
 sitasi bawaannya ("Yudianto, Ferdi") dibanding *byline* artikelnya (Rahman, Choirunnisa,
 Putra). Daftar pustaka di sini memakai nama pada *byline*. Konfirmasikan bila ragu.
-
-Pada BAB III terdapat tiga penanda: dua `[BUTUH KEPUTUSAN PENULIS]` di 3.2.3 (jumlah
-naskah uji, jumlah dan asal penilai, bentuk data sebelum-sesudah), satu di 3.4 (jadwal
-masih usulan lima bulan), dan satu `[CATATAN UNTUK PENULIS]` di 3.2.4 (dimensi rubrik
-diturunkan dari struktur profil merek, belum dari pustaka).
 
 **Gambar yang harus digambar sendiri** — naskah sudah merujuknya, berkasnya belum ada:
 
@@ -155,10 +171,8 @@ diturunkan dari struktur profil merek, belum dari pustaka).
 | 3.4 | *Entity relationship diagram* | 3.1.3. |
 | 3.5 | Tahapan RAD | 3.3 |
 
-Belum dikerjakan: Bagian Awal (Halaman Judul, Daftar Isi, Daftar Gambar, Daftar Tabel).
-
-Empat keputusan yang masih menahan BAB III: metode pengembangan sistem, bentuk dan jumlah
-data sebelum-sesudah, jumlah serta asal penilai rubrik, dan jadwal penelitian.
+Bagian Awal (Halaman Judul, Daftar Isi, Daftar Gambar, Daftar Tabel) sudah dirakit,
+berikut penomoran halamannya.
 
 ## Catatan
 

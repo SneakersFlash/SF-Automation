@@ -29,6 +29,7 @@ Pemakaian:
     python3 build_docx.py bab-1-pendahuluan.md -o keluaran.docx
 """
 
+import hashlib
 import re
 import sys
 import zipfile
@@ -46,6 +47,7 @@ LINE_TABEL = 240                # tabel pakai spasi 1 (pedoman mengecualikan tab
 KOLOM = [1417, 2268, 1417, 1701, 1134]   # lebar kolom default, total 14 cm
 
 NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+NS_R = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
 RE_LIST = re.compile(r"^([a-z])\.\s+(.*)$")
 RE_BOLDMARK = re.compile(r"(\[[^\]]+\])")
 
@@ -78,7 +80,8 @@ def runs(text, bold=False, size=SZ_BODY, font=None):
 
 
 def para(text, *, jc="both", bold=False, size=SZ_BODY,
-         first_line=0, left=0, hanging=0, font=None, line=None, leader=False):
+         first_line=0, left=0, hanging=0, font=None, line=None, leader=False,
+         ekor_xml=""):
     ind = ""
     if left or first_line or hanging:
         bits = []
@@ -95,7 +98,8 @@ def para(text, *, jc="both", bold=False, size=SZ_BODY,
     return (f'<w:p><w:pPr>{tabs}<w:jc w:val="{jc}"/>'
             f'<w:spacing w:before="0" w:after="0" w:line="{line or LINE}" '
             f'w:lineRule="auto"/>'
-            f'{ind}</w:pPr>{runs(text, bold=bold, size=size, font=font)}{ekor}</w:p>')
+            f'{ind}</w:pPr>{runs(text, bold=bold, size=size, font=font)}'
+            f'{ekor}{ekor_xml}</w:p>')
 
 
 def sel(text, *, header=False, width=1417):
@@ -136,7 +140,12 @@ HANGING = 720                   # 0,5 inci, indensi gantung gaya APA
 
 
 def ganti_halaman():
-    return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
+    """Paragraf pembawa ganti halaman; tingginya ditekan agar tidak menyisakan
+    baris kosong di puncak halaman berikutnya."""
+    return ('<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" '
+            'w:lineRule="exact"/><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/>'
+            '</w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/>'
+            '</w:rPr><w:br w:type="page"/></w:r></w:p>')
 
 
 def baca_entri_pustaka(path):
@@ -153,7 +162,8 @@ def baca_entri_pustaka(path):
 
 
 def blok_pustaka(path):
-    out = [para("DAFTAR PUSTAKA", jc="center", bold=True, size=SZ_BAB),
+    out = [tandai(para("DAFTAR PUSTAKA", jc="center", bold=True, size=SZ_BAB),
+                  kunci("DAFTAR PUSTAKA")),
            para("", jc="both")]
     for e in baca_entri_pustaka(path):
         # Pedoman menuntut rata kiri-kanan dan tidak mengecualikan daftar pustaka.
@@ -188,13 +198,61 @@ def halaman_judul(judul, nama, nim, tahun):
     ])
 
 
-def daftar(judul, entri):
+# --- Penanda (bookmark) + field nomor halaman -------------------------------
+# Pedoman 3.4: bagian awal memakai angka Romawi kecil, bagian inti dan akhir
+# memakai angka biasa; nomor di kanan atas, kecuali halaman bab baru di tengah
+# bawah. Nomor pada Daftar Isi/Gambar/Tabel diisi field PAGEREF supaya Word
+# menghitungnya sendiri dan tetap benar setelah gambar disisipkan.
+
+_bm = [0]
+
+
+def kunci(teks):
+    """Nama penanda yang stabil: sama di naskah maupun di daftar isi."""
+    return "R" + hashlib.md5(" ".join(teks.split()).lower().encode()).hexdigest()[:16]
+
+
+def tandai(xml, nama):
+    if not nama:
+        return xml
+    _bm[0] += 1
+    return (f'<w:bookmarkStart w:id="{_bm[0]}" w:name="{nama}"/>'
+            f'{xml}<w:bookmarkEnd w:id="{_bm[0]}"/>')
+
+
+def _rpr(size=SZ_BODY):
+    return (f'<w:rPr><w:rFonts w:ascii="{FONT}" w:hAnsi="{FONT}" w:cs="{FONT}"/>'
+            f'<w:sz w:val="{size}"/><w:szCs w:val="{size}"/></w:rPr>')
+
+
+def field(instr, cache):
+    r = _rpr()
+    return (f'<w:r>{r}<w:fldChar w:fldCharType="begin"/></w:r>'
+            f'<w:r>{r}<w:instrText xml:space="preserve"> {instr} </w:instrText></w:r>'
+            f'<w:r>{r}<w:fldChar w:fldCharType="separate"/></w:r>'
+            f'<w:r>{r}<w:t>{cache}</w:t></w:r>'
+            f'<w:r>{r}<w:fldChar w:fldCharType="end"/></w:r>')
+
+
+def rujuk(nama, cache="1"):
+    return field(f"PAGEREF {nama} \\h", cache)
+
+
+def blok_nomor(jc):
+    """Isi header/footer: satu field PAGE dengan perataan yang diminta."""
+    return (f'<w:p><w:pPr><w:jc w:val="{jc}"/><w:spacing w:before="0" '
+            f'w:after="0" w:line="{LINE_SATU}" w:lineRule="auto"/></w:pPr>'
+            f'{field("PAGE", "1")}</w:p>')
+
+
+def daftar(judul, entri, penanda=None):
     """Judul TNR 14 bold, jarak 2 x 1,5 spasi, isi spasi 1 dengan titik penuntun."""
-    out = [para(judul, jc="center", bold=True, size=SZ_BAB),
+    out = [tandai(para(judul, jc="center", bold=True, size=SZ_BAB), penanda),
            para("", jc="both"), para("", jc="both")]
-    for teks, menjorok in entri:
+    for teks, menjorok, ref, awal in entri:
         out.append(para(teks, jc="left", left=(INDENT if menjorok else 0),
-                        line=LINE_SATU, leader=True))
+                        line=LINE_SATU, leader=True,
+                        ekor_xml=rujuk(ref, awal) if ref else ""))
     return "".join(out)
 
 
@@ -205,9 +263,9 @@ def kumpulkan_entri(md_paths):
         for baris in open(m, encoding="utf-8").read().splitlines():
             b = baris.strip()
             if b.startswith("# "):
-                entri.append((b[2:].strip(), False))
+                entri.append((b[2:].strip(), False, kunci(b[2:]), "1"))
             elif b.startswith("## "):
-                entri.append((b[3:].strip(), True))
+                entri.append((b[3:].strip(), True, kunci(b[3:]), "1"))
     return entri
 
 
@@ -222,8 +280,12 @@ def kumpulkan_label(md_paths, awalan):
     return sorted(urut, key=lambda x: [int(v) for v in x.split(".")])
 
 
-def parse(md):
+RE_LABEL = re.compile(r"\b(Gambar|Tabel) (\d+\.\d+)\b")
+
+
+def parse(md, sudah=None):
     body, prev, buf, lebar_next = [], None, [], []
+    sudah = sudah if sudah is not None else set()
 
     def flush():
         """Keluarkan tabel yang tertampung; buang baris pemisah |---|."""
@@ -250,9 +312,10 @@ def parse(md):
             bagian = judul.split(" ", 2)
             kepala = " ".join(bagian[:2])                 # "BAB I"
             ekor = bagian[2] if len(bagian) > 2 else ""   # "PENDAHULUAN"
-            body.append(para(kepala, jc="center", bold=True, size=SZ_BAB))
+            kepala_xml = para(kepala, jc="center", bold=True, size=SZ_BAB)
             if ekor:
-                body.append(para(ekor, jc="center", bold=True, size=SZ_BAB))
+                kepala_xml += para(ekor, jc="center", bold=True, size=SZ_BAB)
+            body.append(tandai(kepala_xml, kunci(judul)))
             # jarak akhir judul bab ke teks = 2 x 1,5 spasi
             body.append(para("", jc="both"))
             prev = "bab"
@@ -276,7 +339,8 @@ def parse(md):
 
         if line.startswith("## "):
             body.append(para("", jc="both"))             # jarak sebelum sub-judul
-            body.append(para(line[3:].strip(), jc="left", bold=True))
+            body.append(tandai(para(line[3:].strip(), jc="left", bold=True),
+                               kunci(line[3:])))
             prev = "subbab"
             continue
 
@@ -289,9 +353,16 @@ def parse(md):
 
         # Paragraf tepat setelah butir daftar disejajarkan dengan butirnya.
         if prev == "list":
-            body.append(para(line, jc="both", left=LIST_LEFT))
+            xml = para(line, jc="both", left=LIST_LEFT)
         else:
-            body.append(para(line, jc="both", first_line=INDENT))
+            xml = para(line, jc="both", first_line=INDENT)
+        # Penyebutan pertama sebuah gambar/tabel jadi jangkar Daftar Gambar/Tabel.
+        for awalan, nomor in RE_LABEL.findall(line):
+            nama = f"{awalan} {nomor}"
+            if nama not in sudah:
+                sudah.add(nama)
+                xml = tandai(xml, kunci(nama))
+        body.append(xml)
         prev = "para"
 
     flush()
@@ -315,38 +386,90 @@ def baca_label(path):
     return gambar, tabel
 
 
+# Rujukan header/footer dipakai bersama semua bagian; nomor rId tetap.
+RID = {"styles": "rId1", "settings": "rId2", "hdr_kosong": "rId3",
+       "hdr_kanan": "rId4", "ftr_kosong": "rId5", "ftr_tengah": "rId6"}
+
+
+def sect(jenis, mulai_baru=False, akhir=False):
+    """Satu bagian dokumen dengan aturan nomor halaman pedoman 3.4.
+
+    Halaman pertama tiap bagian dianggap 'halaman bab baru': nomornya di tengah
+    bawah (w:titlePg), halaman berikutnya di kanan atas.
+    """
+    ftr_awal = RID["ftr_tengah"] if jenis == "bab" else RID["ftr_kosong"]
+    ref = (f'<w:headerReference w:type="first" r:id="{RID["hdr_kosong"]}"/>'
+           f'<w:headerReference w:type="default" r:id="{RID["hdr_kanan"]}"/>'
+           f'<w:footerReference w:type="first" r:id="{ftr_awal}"/>'
+           f'<w:footerReference w:type="default" r:id="{RID["ftr_kosong"]}"/>')
+    if jenis == "awal":
+        nomor = '<w:pgNumType w:fmt="lowerRoman" w:start="1"/>'
+    elif mulai_baru:
+        nomor = '<w:pgNumType w:fmt="decimal" w:start="1"/>'
+    else:
+        nomor = '<w:pgNumType w:fmt="decimal"/>'
+    jenis_br = "" if akhir else '<w:type w:val="nextPage"/>'
+    return (f'<w:sectPr>{ref}{jenis_br}<w:pgSz w:w="{A4_W}" w:h="{A4_H}"/>'
+            f'<w:pgMar w:top="{MAR["top"]}" w:right="{MAR["right"]}" '
+            f'w:bottom="{MAR["bottom"]}" w:left="{MAR["left"]}" '
+            f'w:header="850" w:footer="850" w:gutter="0"/>'
+            f'{nomor}<w:titlePg/></w:sectPr>')
+
+
+def pemisah(sp):
+    """Paragraf pembawa batas bagian; tingginya ditekan agar tak menyisakan baris."""
+    return (f'<w:p><w:pPr>{sp}<w:spacing w:before="0" w:after="0" '
+            f'w:line="20" w:lineRule="exact"/>'
+            f'<w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p>')
+
+
 def build(md_paths, out_path, pustaka=None, awal=None, label=None):
-    bagian = []
+    _bm[0] = 0
+    sudah = set()
+    bagian = []                                  # (xml, jenis)
+
     if awal:
         judul, nama, nim, tahun = awal
-        bagian.append(halaman_judul(judul, nama, nim, tahun))
+        depan = [tandai(halaman_judul(judul, nama, nim, tahun),
+                        kunci("HALAMAN JUDUL"))]
 
-        isi = [("HALAMAN JUDUL", False), ("DAFTAR ISI", False),
-               ("DAFTAR GAMBAR", False), ("DAFTAR TABEL", False)]
+        # Nomor bagian awal sudah pasti, jadi nilai awal field diisi apa adanya.
+        isi = [("HALAMAN JUDUL", False, kunci("HALAMAN JUDUL"), "i"),
+               ("DAFTAR ISI", False, kunci("DAFTAR ISI"), "ii"),
+               ("DAFTAR GAMBAR", False, kunci("DAFTAR GAMBAR"), "iii"),
+               ("DAFTAR TABEL", False, kunci("DAFTAR TABEL"), "iv")]
         isi += kumpulkan_entri(md_paths)
         if pustaka:
-            isi.append(("DAFTAR PUSTAKA", False))
-        bagian.append(daftar("DAFTAR ISI", isi))
+            isi.append(("DAFTAR PUSTAKA", False, kunci("DAFTAR PUSTAKA"), "1"))
+        depan.append(daftar("DAFTAR ISI", isi, kunci("DAFTAR ISI")))
 
         ket_g, ket_t = baca_label(label) if label else ({}, {})
         for nama_daftar, awalan, ket in (("DAFTAR GAMBAR", "Gambar", ket_g),
                                          ("DAFTAR TABEL", "Tabel", ket_t)):
-            nomor = kumpulkan_label(md_paths, awalan)
-            entri = [(f"{awalan} {n}  {ket.get(n, '')}".rstrip(), False) for n in nomor]
-            bagian.append(daftar(nama_daftar, entri))
+            entri = [(f"{awalan} {n}  {ket.get(n, '')}".rstrip(), False,
+                      kunci(f"{awalan} {n}"), "1")
+                     for n in kumpulkan_label(md_paths, awalan)]
+            depan.append(daftar(nama_daftar, entri, kunci(nama_daftar)))
 
-    bagian += [parse(open(m, encoding="utf-8").read()) for m in md_paths]
+        bagian.append((ganti_halaman().join(depan), "awal"))
+
+    for m in md_paths:
+        bagian.append((parse(open(m, encoding="utf-8").read(), sudah), "bab"))
     if pustaka:
-        bagian.append(blok_pustaka(pustaka))
-    body = ganti_halaman().join(bagian)
+        bagian.append((blok_pustaka(pustaka), "bab"))
 
-    sect = (f'<w:sectPr><w:pgSz w:w="{A4_W}" w:h="{A4_H}"/>'
-            f'<w:pgMar w:top="{MAR["top"]}" w:right="{MAR["right"]}" '
-            f'w:bottom="{MAR["bottom"]}" w:left="{MAR["left"]}" '
-            f'w:header="850" w:footer="850" w:gutter="0"/></w:sectPr>')
+    potongan, pertama_bab = [], True
+    for i, (xml, jenis) in enumerate(bagian):
+        awal_arab = jenis == "bab" and pertama_bab
+        if jenis == "bab":
+            pertama_bab = False
+        terakhir = i == len(bagian) - 1
+        sp = sect(jenis, awal_arab, akhir=terakhir)
+        potongan.append(xml + (sp if terakhir else pemisah(sp)))
+    body = "".join(potongan)
 
     document = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-                f'<w:document {NS}><w:body>{body}{sect}</w:body></w:document>')
+                f'<w:document {NS} {NS_R}><w:body>{body}</w:body></w:document>')
 
     styles = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
               f'<w:styles {NS}><w:docDefaults><w:rPrDefault><w:rPr>'
@@ -358,25 +481,52 @@ def build(md_paths, out_path, pustaka=None, awal=None, label=None):
               f'w:lineRule="auto"/></w:pPr></w:pPrDefault>'
               f'</w:docDefaults></w:styles>')
 
+    # Word menyegarkan semua field saat berkas dibuka, jadi nomor pada daftar
+    # isi/gambar/tabel langsung terisi tanpa disunting manual.
+    settings = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                f'<w:settings {NS}><w:updateFields w:val="true"/></w:settings>')
+
+    kepala = lambda isi_p: ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                            f'<w:hdr {NS}>{isi_p}</w:hdr>')
+    kaki = lambda isi_p: ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                          f'<w:ftr {NS}>{isi_p}</w:ftr>')
+    kosong = para("", jc="left", line=LINE_SATU)
+    parts = {
+        "word/header1.xml": kepala(kosong),                    # halaman bab baru
+        "word/header2.xml": kepala(blok_nomor("right")),       # kanan atas
+        "word/footer1.xml": kaki(kosong),
+        "word/footer2.xml": kaki(blok_nomor("center")),        # tengah bawah
+    }
+
+    CT = "application/vnd.openxmlformats-officedocument.wordprocessingml."
     content_types = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
         '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
         '<Default Extension="xml" ContentType="application/xml"/>'
-        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-'
-        'officedocument.wordprocessingml.document.main+xml"/>'
-        '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-'
-        'officedocument.wordprocessingml.styles+xml"/></Types>')
+        f'<Override PartName="/word/document.xml" ContentType="{CT}document.main+xml"/>'
+        f'<Override PartName="/word/styles.xml" ContentType="{CT}styles+xml"/>'
+        f'<Override PartName="/word/settings.xml" ContentType="{CT}settings+xml"/>'
+        + "".join(f'<Override PartName="/{n}" ContentType="{CT}'
+                  f'{"header" if "header" in n else "footer"}+xml"/>' for n in parts)
+        + '</Types>')
 
     rels = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/'
             '2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
 
+    R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/"
+    tautan = [(RID["styles"], "styles", "styles.xml"),
+              (RID["settings"], "settings", "settings.xml"),
+              (RID["hdr_kosong"], "header", "header1.xml"),
+              (RID["hdr_kanan"], "header", "header2.xml"),
+              (RID["ftr_kosong"], "footer", "footer1.xml"),
+              (RID["ftr_tengah"], "footer", "footer2.xml")]
     doc_rels = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
                 '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/'
-                '2006/relationships/styles" Target="styles.xml"/></Relationships>')
+                + "".join(f'<Relationship Id="{i}" Type="{R}{t}" Target="{f}"/>'
+                          for i, t, f in tautan) + '</Relationships>')
 
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", content_types)
@@ -384,6 +534,9 @@ def build(md_paths, out_path, pustaka=None, awal=None, label=None):
         z.writestr("word/document.xml", document)
         z.writestr("word/_rels/document.xml.rels", doc_rels)
         z.writestr("word/styles.xml", styles)
+        z.writestr("word/settings.xml", settings)
+        for nama_part, isi_part in parts.items():
+            z.writestr(nama_part, isi_part)
 
     return out_path
 
