@@ -59,9 +59,11 @@ Multi-Agent AI untuk Meningkatkan Efisiensi dan Konsistensi Brand Voice \
 
 Sudah dirakit otomatis sesuai pedoman butir 3.4, jadi tidak perlu diatur manual:
 
-- **Bagian awal** memakai angka Romawi kecil. Halaman judul dihitung sebagai `i`
-  tetapi nomornya tidak dicetak (mengikuti Contoh 3), sehingga Daftar Isi jatuh di
-  `ii`, Daftar Gambar `iii`, Daftar Tabel `iv` — persis seperti Contoh 4.
+- **Bagian awal** memakai angka Romawi kecil **di tengah bawah**. Halaman judul
+  dihitung sebagai `i` tetapi nomornya tidak dicetak (mengikuti Contoh 3), sehingga
+  Daftar Isi jatuh di `ii`, Daftar Gambar `iii`, Daftar Tabel `iv` — persis Contoh 4.
+  Daftar Isi/Gambar/Tabel adalah judul setara bab, jadi halamannya masuk ketentuan
+  "halaman bab baru" yang pedoman minta di tengah bawah.
 - **Bagian inti dan akhir** memakai angka biasa, dimulai dari 1 di BAB I.
 - **Posisi** nomor di kanan atas, kecuali halaman awal setiap bab yang di tengah
   bawah. Tiap bab jadi *section* tersendiri dengan `w:titlePg` supaya halaman
@@ -96,10 +98,11 @@ python3 $S/cek_pustaka.py skripsi/daftar-pustaka.md --tahun 2026 \
         --teks skripsi/bab-3-metode-penelitian.md
 ```
 
-Hasil terakhir: **ketiga bab dan dokumen gabungan LULUS 16, GAGAL 0; berkas lengkap
-LULUS 19, GAGAL 0** — A4, margin 4/3/3/3 cm, Times New Roman 12, rata kiri-kanan, spasi 1,5,
+Hasil terakhir: **ketiga bab dan dokumen gabungan LULUS 17, GAGAL 0; berkas lengkap
+LULUS 20, GAGAL 0** — A4, margin 4/3/3/3 cm, Times New Roman 12, rata kiri-kanan, spasi 1,5,
 before/after 0 pt, judul bab TNR 14 kapital bold, plus penomoran halaman (Romawi kecil di
-bagian awal, angka biasa mulai 1 di BAB I, kanan atas dan tengah bawah di halaman awal bab).
+bagian awal di tengah bawah, angka biasa mulai 1 di BAB I, kanan atas kecuali halaman
+awal bab yang di tengah bawah).
 Paragraf di dalam tabel dikecualikan karena pedoman memang mengecualikan tabel dari
 aturan spasi 1,5.
 

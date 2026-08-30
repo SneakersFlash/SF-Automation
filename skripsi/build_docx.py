@@ -397,11 +397,19 @@ def sect(jenis, mulai_baru=False, akhir=False):
     Halaman pertama tiap bagian dianggap 'halaman bab baru': nomornya di tengah
     bawah (w:titlePg), halaman berikutnya di kanan atas.
     """
-    ftr_awal = RID["ftr_tengah"] if jenis == "bab" else RID["ftr_kosong"]
-    ref = (f'<w:headerReference w:type="first" r:id="{RID["hdr_kosong"]}"/>'
-           f'<w:headerReference w:type="default" r:id="{RID["hdr_kanan"]}"/>'
+    if jenis == "awal":
+        # Halaman judul tanpa nomor; Daftar Isi/Gambar/Tabel adalah judul setara
+        # bab, jadi nomor Romawinya ikut aturan halaman bab: tengah bawah.
+        hdr_awal, hdr_biasa = RID["hdr_kosong"], RID["hdr_kosong"]
+        ftr_awal, ftr_biasa = RID["ftr_kosong"], RID["ftr_tengah"]
+    else:
+        # Halaman pertama bab di tengah bawah, halaman lanjutannya di kanan atas.
+        hdr_awal, hdr_biasa = RID["hdr_kosong"], RID["hdr_kanan"]
+        ftr_awal, ftr_biasa = RID["ftr_tengah"], RID["ftr_kosong"]
+    ref = (f'<w:headerReference w:type="first" r:id="{hdr_awal}"/>'
+           f'<w:headerReference w:type="default" r:id="{hdr_biasa}"/>'
            f'<w:footerReference w:type="first" r:id="{ftr_awal}"/>'
-           f'<w:footerReference w:type="default" r:id="{RID["ftr_kosong"]}"/>')
+           f'<w:footerReference w:type="default" r:id="{ftr_biasa}"/>')
     if jenis == "awal":
         nomor = '<w:pgNumType w:fmt="lowerRoman" w:start="1"/>'
     elif mulai_baru:
