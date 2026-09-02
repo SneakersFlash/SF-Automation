@@ -26,6 +26,10 @@ Judul:
 | `daftar-pustaka.md` | Rujukan terverifikasi, gaya APA. Tumbuh seiring bab bertambah. |
 | `*.docx` | Hasil rakitan, format sudah sesuai pedoman. Jangan disunting langsung — akan tertimpa. |
 | `build_docx.py` | Perakit `.md` → `.docx`. Stdlib saja, tanpa dependensi. |
+| `sidang-proposal.pptx` | **Slide sidang proposal.** 24 slide, 16:9. |
+| `build_pptx.py` | Perakit slide. Isi slide ada pada daftar `SLIDE` di dalamnya. |
+| `cek_pptx.py` | Pemeriksa paket `.pptx`: XML, rujukan, luapan teks. |
+| `render_pptx.py` | Merender slide jadi PNG memakai PIL, untuk dilihat sebelum sidang. |
 
 Subset Markdown yang dikenali perakit: `# BAB I ...` (judul bab, dipecah dua baris),
 `## 1.1 ...` (sub-bab), `### 2.2.1. ...` (sub-sub-bab), `a. ...` (butir daftar),
@@ -89,6 +93,32 @@ ditandai. Logo dapat diambil dari `skripsi .docx` yang diunggah sebelumnya.
 
 Mesin ini tidak punya pandoc, libreoffice, maupun python-docx, jadi `build_docx.py`
 merakit `.docx` langsung sebagai arsip ZIP berisi OOXML.
+
+## Slide sidang
+
+```bash
+cd skripsi
+python3 build_pptx.py -o sidang-proposal.pptx     # rakit ulang
+python3 cek_pptx.py sidang-proposal.pptx          # periksa paket
+mkdir -p /tmp/pratinjau
+python3 render_pptx.py sidang-proposal.pptx /tmp/pratinjau   # lihat hasilnya
+```
+
+Isi tiap slide ditulis pada daftar `SLIDE` di dalam `build_pptx.py` — sunting di situ,
+lalu rakit ulang. Jangan menyunting `.pptx` lalu merakit ulang; hasil suntingan akan
+tertimpa. Urutannya mengikuti alur proposal: latar belakang (3 slide), identifikasi
+sampai manfaat, penelitian terdahulu dan celah riset, kerangka berpikir, analisis dan
+usulan sistem, metode penelitian, rancangan pengujian, RAD, dan jadwal.
+
+Empat penanda `[ sisipkan ... ]` menunggu berkas gambar: logo Unpam pada halaman judul,
+lalu Gambar 2.1, 3.1, 3.2, dan 3.5. Nama pembimbing pada halaman judul juga masih
+berupa penanda.
+
+`render_pptx.py` memakai DejaVu Sans karena mesin ini tidak punya Calibri. DejaVu lebih
+lebar, jadi pratinjaunya pesimistis: yang muat di pratinjau pasti muat di PowerPoint.
+Yang **tidak** dapat diperiksa di sini adalah apakah PowerPoint membuka berkasnya tanpa
+keluhan — mesin ini tidak punya PowerPoint maupun LibreOffice. Buka sekali sebelum hari
+sidang.
 
 ## Memverifikasi format
 
