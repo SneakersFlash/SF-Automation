@@ -106,9 +106,17 @@ python3 render_pptx.py sidang-proposal.pptx /tmp/pratinjau   # lihat hasilnya
 
 Isi tiap slide ditulis pada daftar `SLIDE` di dalam `build_pptx.py` — sunting di situ,
 lalu rakit ulang. Jangan menyunting `.pptx` lalu merakit ulang; hasil suntingan akan
-tertimpa. Urutannya mengikuti alur proposal: latar belakang (3 slide), identifikasi
-sampai manfaat, penelitian terdahulu dan celah riset, kerangka berpikir, analisis dan
-usulan sistem, metode penelitian, rancangan pengujian, RAD, dan jadwal.
+tertimpa.
+
+Slide sengaja dibuat ringkas; uraiannya ada di **catatan pembicara** (22 dari 24 slide).
+Buka lewat View → Notes Page, atau Presenter View saat sidang. Tulis di kunci `catatan`
+berupa daftar baris; kunci `nota` yang mirip namanya dipakai untuk keterangan kaki tabel
+di badan slide, bukan catatan pembicara.
+
+Lima slide menerangkan cara sistem bekerja sebagai *multi-agent* — bagian yang tidak
+dapat dibaca dari naskah karena diturunkan langsung dari kode: arti "agen" di sistem ini
+(satu model, empat ruang kerja), keempat agen dan tugasnya, alur satu permintaan,
+kunci anti-generik, dan proses gabungan yang berjalan di latar.
 
 Empat penanda `[ sisipkan ... ]` menunggu berkas gambar: logo Unpam pada halaman judul,
 lalu Gambar 2.1, 3.1, 3.2, dan 3.5. Nama pembimbing pada halaman judul juga masih

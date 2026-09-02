@@ -204,6 +204,93 @@ def gambar_kosong(k, x, y, cx, cy, keterangan):
                 algn="ctr"), anchor="ctr")
 
 
+def kartu(k, x, y, cx, cy, judul, baris, sz=1300):
+    """Kotak lembut berpita jingga di kiri: satu gagasan per kartu."""
+    k.blok(x, y, cx, cy, LEMBUT)
+    k.blok(x, y, 41148, cy, JINGGA)
+    isi = par(judul, "t", sz + 100, NAVY, 0, tebal=True)
+    isi += "".join(par(b, "t", sz, TEKS, 260) for b in baris)
+    k.kotak(x + 228600, y + 182880, cx - 411480, cy - 365760, isi)
+
+
+def lencana(k, x, y, sisi, teks):
+    k.blok(x, y, sisi, sisi, NAVY)
+    k.kotak(x, y, sisi, sisi, par(teks, "t", 1400, PUTIH, 0, tebal=True,
+                                  algn="ctr"), anchor="ctr")
+
+
+def slide_kartu(s, k):
+    n = len(s["kartu"])
+    sela = 274320
+    cx = (LEBAR - sela * (n - 1)) // n
+    cy = s.get("tinggi", 2560320)
+    for i, (judul, baris) in enumerate(s["kartu"]):
+        kartu(k, TEPI + i * (cx + sela), Y_ISI, cx, cy, judul, baris,
+              s.get("sz", 1300))
+    if s.get("kaki"):
+        k.kotak(TEPI, Y_ISI + cy + 320040, LEBAR, 900000,
+                "".join(par(t, j, s.get("sz_kaki", 1400)) for j, t in s["kaki"]))
+
+
+def slide_alur(s, k):
+    n = len(s["langkah"])
+    sela = 228600
+    cx = (LEBAR - sela * (n - 1)) // n
+    cy = 2194560
+    y = Y_ISI + 274320
+    for i, (judul, baris) in enumerate(s["langkah"]):
+        x = TEPI + i * (cx + sela)
+        k.blok(x, y, cx, cy, LEMBUT)
+        lencana(k, x, y - 228600, 457200, str(i + 1))
+        isi = par(judul, "t", 1300, NAVY, 0, tebal=True)
+        isi += "".join(par(b, "t", 1150, TEKS, 220) for b in baris)
+        k.kotak(x + 182880, y + 320040, cx - 365760, cy - 502920, isi)
+        if i < n - 1:
+            k.kotak(x + cx, y + cy // 2 - 228600, sela, 457200,
+                    par("\u203a", "t", 1800, JINGGA, 0, tebal=True, algn="ctr"))
+    if s.get("kaki"):
+        k.kotak(TEPI, y + cy + 365760, LEBAR, 900000,
+                "".join(par(t, j, 1400) for j, t in s["kaki"]))
+
+
+def slide_angka(s, k):
+    n = len(s["angka"])
+    sela = 274320
+    cx = (LEBAR - sela * (n - 1)) // n
+    cy = 1737360
+    for i, (nilai, label) in enumerate(s["angka"]):
+        x = TEPI + i * (cx + sela)
+        k.blok(x, Y_ISI, cx, cy, LEMBUT)
+        k.blok(x, Y_ISI, cx, 41148, JINGGA)
+        k.kotak(x + 137160, Y_ISI + 320040, cx - 274320, 640080,
+                par(nilai, "t", 3000, NAVY, 0, tebal=True, algn="ctr"))
+        k.kotak(x + 137160, Y_ISI + 1051560, cx - 274320, 548640,
+                par(label, "t", 1250, REDUP, 0, algn="ctr"))
+    if s.get("kaki"):
+        k.kotak(TEPI, Y_ISI + cy + 457200, LEBAR, 1500000,
+                "".join(par(t, j, s.get("sz", 1600)) for j, t in s["kaki"]))
+
+
+def slide_cip(s, k):
+    """Deretan label pendek — untuk daftar topik yang tidak perlu kalimat."""
+    y = Y_ISI
+    for kepala_baris, daftar in s["cip"]:
+        k.kotak(TEPI, y, LEBAR, 300000,
+                par(kepala_baris, "t", 1300, JINGGA, 0, tebal=True, spasi=100))
+        y += 411480
+        x = TEPI
+        for label in daftar:
+            lebar = int(len(label.replace("*", "")) * 105000) + 320040
+            if x + lebar > TEPI + LEBAR:
+                x = TEPI
+                y += 548640
+            k.blok(x, y, lebar, 411480, LEMBUT)
+            k.kotak(x + 137160, y, lebar - 274320, 411480,
+                    par(label, "t", 1300, NAVY, 0, algn="ctr"), anchor="ctr")
+            x += lebar + 137160
+        y += 868680
+
+
 # ---------------------------------------------------------------- isi slide
 JUDUL = ("Perancangan Sistem Otomasi Produksi Konten Pemasaran "
          "Berbasis *Multi-Agent* AI untuk Meningkatkan Efisiensi "
@@ -212,351 +299,441 @@ JUDUL = ("Perancangan Sistem Otomasi Produksi Konten Pemasaran "
 SLIDE = [
     {"tipe": "judul"},
 
-    {"tipe": "isi", "judul": "Alur Presentasi", "sz": 1700, "isi": [
-        ("a", "Latar belakang dan permasalahan"),
-        ("a", "Identifikasi, rumusan, dan batasan masalah"),
-        ("a", "Tujuan dan manfaat penelitian"),
-        ("a", "Penelitian terdahulu dan celah riset"),
-        ("a", "Landasan teori dan kerangka berpikir"),
-        ("a", "Analisis kebutuhan dan usulan sistem"),
+    {"tipe": "isi", "judul": "Alur Presentasi", "sz": 1900, "isi": [
+        ("a", "Masalah dan pertanyaan penelitian"),
+        ("a", "Celah riset dan kerangka berpikir"),
+        ("a", "Cara sistem bekerja sebagai *multi-agent*"),
         ("a", "Metode penelitian dan rancangan pengujian"),
-        ("a", "Metode perancangan sistem dan jadwal penelitian"),
-    ]},
-
-    {"tipe": "isi", "judul": "Latar Belakang (1/3)",
-     "sub": "BAB I · 1.1", "sz": 1600, "isi": [
-        ("h", "Persaingan bergeser ke kehadiran merek"),
-        ("b", "Konsumen membandingkan harga dan ulasan dalam hitungan detik, "
-              "sehingga keunggulan lokasi toko tidak lagi memadai (Lubis dkk., 2025)."),
-        ("b", "Pada ritel sepatu olahraga, promosi media sosial berpengaruh "
-              "signifikan terhadap keputusan pembelian, dan konsistensi pesan "
-              "lintas platform dianjurkan (Ibrahim & Abdurrahman, 2025)."),
-        ("h", "AI generatif menjawab, tetapi membawa syarat"),
-        ("b", "Model bahasa besar sudah dipakai untuk penghasilan konten, namun "
-              "menyisakan persoalan privasi, transparansi, dan bias "
-              "(Aghaei dkk., 2025)."),
-        ("b", "Kajian PRISMA menemukan ketegangan antara efisiensi dan integritas, "
-              "dengan risiko halusinasi serta bias algoritmik — manusia tetap "
-              "harus menjadi pemeriksa akhir (Rahman dkk., 2025)."),
+        ("a", "Jadwal"),
+     ],
+     "catatan": [
+        "Presentasi dibagi lima. Bagian ketiga paling panjang karena di situ letak",
+        "kebaruan penelitian ini — cara sistem membagi tugas ke beberapa agen.",
+        "Target waktu: 15 menit, sisakan waktu untuk tanya jawab.",
      ]},
 
-    {"tipe": "isi", "judul": "Latar Belakang (2/3) — Kondisi di SneakersFlash",
-     "sub": "BAB I · 1.1", "sz": 1600,
-     "sorot": "1–3 jam per materi · kasus ekstrem 12 jam · "
-              "kebutuhan 5 materi per hari → 5–15 jam kerja per hari",
-     "isi": [
-        ("a", "Waktu penyiapan panjang dan sangat bervariasi, sehingga jadwal "
-              "peluncuran sulit diperkirakan."),
-        ("a", "Gaya bahasa berbeda antar admin karena standar merek hanya hidup "
-              "sebagai kesepakatan lisan."),
-        ("a", "Perintah ke AI tidak menyertakan konteks merek, sehingga keluaran "
-              "generik dan masih menuntut penyuntingan panjang."),
-        ("a", "Keluaran tidak tercatat, sehingga materi yang telah terbit tidak "
-              "dapat ditelusuri kembali."),
+    {"tipe": "angka", "judul": "Masalah di SneakersFlash",
+     "sub": "BAB I · 1.1",
+     "angka": [
+        ("1–3 jam", "penyiapan satu materi konten"),
+        ("12 jam", "kasus ekstrem yang pernah terjadi"),
+        ("5 materi", "kebutuhan penerbitan per hari"),
+        ("5–15 jam", "beban kerja harian yang timbul"),
+     ],
+     "sz": 1600,
+     "kaki": [
+        ("b", "Melampaui jam kerja yang tersedia."),
+        ("b", "Rentangnya lebar, jadi waktu selesai tidak dapat diperkirakan — "
+              "menyusun jadwal peluncuran menjadi sulit."),
+     ],
+     "catatan": [
+        "Angka ini estimasi retrospektif dari praktik kerja tim, bukan catatan waktu",
+        "yang terekam sistem. Keterbatasan itu dinyatakan pada batasan masalah 1.4",
+        "butir g, dan itulah sebabnya analisisnya deskriptif, bukan uji statistik.",
+        "Kalau ditanya: rentang 1-3 jam adalah kondisi normal; 12 jam terjadi pada",
+        "materi yang butuh riset produk dan beberapa kali revisi.",
      ]},
 
-    {"tipe": "kolom", "judul": "Latar Belakang (3/3) — Dampak dan Usulan",
-     "sub": "BAB I · 1.1", "sz": 1500,
-     "kiri": ("Bila dibiarkan", [
-        ("b", "Jadwal peluncuran meleset dan momentum yang pendek terlewat."),
-        ("b", "Identitas merek kabur karena gaya bahasa berubah antar unggahan."),
-        ("b", "Mutu bergantung pada masing-masing admin — pergantian personel "
-              "langsung menurunkan mutu."),
-        ("b", "Tidak ada jejak pencatatan, sehingga pertanggungjawaban sulit."),
-     ]),
-     "kanan": ("Yang diusulkan", [
-        ("b", "Sistem otomasi produksi konten berpendekatan *multi-agent* melalui "
-              "satu gerbang layanan tunggal."),
-        ("b", "Pembedanya: *profil merek terstruktur* disertakan sebagai konteks "
-              "pada setiap permintaan."),
-        ("b", "Standar merek dieksekusi sistem, bukan diingat admin."),
-        ("b", "Setiap proses dicatat; manusia tetap pemeriksa akhir."),
-     ])},
-
-    {"tipe": "isi", "judul": "Identifikasi Masalah",
-     "sub": "BAB I · 1.2", "sz": 1650, "isi": [
-        ("a", "Penyiapan materi konten memerlukan waktu lama karena seluruh "
-              "tahapannya dikerjakan secara manual;"),
-        ("a", "Gaya bahasa merek berubah-ubah antar admin karena standar merek "
-              "tidak dieksekusi oleh sistem;"),
-        ("a", "Perintah kepada AI dijalankan tanpa konteks merek sehingga keluaran "
-              "cenderung generik dan menuntut penyuntingan ulang;"),
-        ("a", "Keluaran AI tidak tercatat sehingga materi yang telah terbit tidak "
-              "dapat ditelusuri kembali;"),
-        ("a", "Standar merek yang berlaku belum dapat dipakai ulang untuk merek lain."),
+    {"tipe": "kartu", "judul": "Empat Persoalan yang Ditemukan",
+     "sub": "BAB I · 1.2", "tinggi": 2377440,
+     "kartu": [
+        ("Lama", ["Seluruh tahapan dikerjakan",
+                  "manual, dari awal, tiap kali."]),
+        ("Tidak seragam", ["Gaya bahasa berbeda antar admin.",
+                           "Standar merek hanya kesepakatan lisan."]),
+        ("Generik", ["Perintah ke AI tanpa konteks merek.",
+                     "Keluaran masih perlu",
+                     "penyuntingan panjang."]),
+        ("Tak tercatat", ["Materi yang sudah terbit",
+                          "tidak dapat ditelusuri kembali."]),
+     ],
+     "kaki": [("t", "Persoalan kelima: standar merek yang berlaku belum dapat "
+                    "dipakai ulang untuk merek lain.")],
+     "catatan": [
+        "Keempat persoalan ini yang nanti dipetakan satu-satu ke rancangan sistem.",
+        "Lama dijawab otomasi; tidak seragam dan generik dijawab profil merek",
+        "terstruktur; tak tercatat dijawab tabel Generation.",
      ]},
 
     {"tipe": "isi", "judul": "Rumusan Masalah",
-     "sub": "BAB I · 1.3", "sz": 1800,
-     "sorot": "Tiga pertanyaan: rancangan sistem · efisiensi waktu · "
-              "konsistensi *brand voice*",
-     "isi": [
-        ("a", "Bagaimana merancang dan membangun sistem otomasi produksi konten "
-              "pemasaran berbasis *multi-agent* AI pada SneakersFlash?"),
-        ("a", "Bagaimana pengaruh penerapan sistem tersebut terhadap efisiensi "
-              "waktu produksi konten dibandingkan proses yang berjalan sebelumnya?"),
-        ("a", "Sejauh mana profil merek terstruktur yang digunakan sistem dapat "
-              "menjaga konsistensi *brand voice* pada keluaran konten?"),
+     "sub": "BAB I · 1.3", "sz": 1900, "isi": [
+        ("a", "Bagaimana merancang sistemnya?"),
+        ("a", "Bagaimana pengaruhnya terhadap efisiensi waktu?"),
+        ("a", "Sejauh mana profil merek menjaga konsistensi *brand voice*?"),
+     ],
+     "catatan": [
+        "Tiga pertanyaan, tiga tujuan, dua alat ukur. Pertanyaan pertama dijawab",
+        "produk rancangan; kedua oleh lembar catat waktu; ketiga oleh rubrik.",
+     ]},
+
+    {"tipe": "kolom", "judul": "Tujuan dan Manfaat",
+     "sub": "BAB I · 1.5 dan 1.6", "sz": 1550,
+     "kiri": ("Tujuan", [
+        ("a", "Merancang dan membangun sistemnya."),
+        ("a", "Mengukur pengaruhnya pada efisiensi waktu."),
+        ("a", "Mengevaluasi konsistensi *brand voice*."),
+     ]),
+     "kanan": ("Manfaat", [
+        ("b", "*Universitas* — rujukan penerapan AI generatif "
+              "pada proses bisnis nyata."),
+        ("b", "*Instansi* — waktu lebih pendek, identitas merek seragam, "
+              "ada jejak pencatatan."),
+        ("b", "*Penulis* — menerapkan analisis dan perancangan sistem "
+              "pada masalah nyata."),
+     ]),
+     "catatan": [
+        "Tujuan sengaja dibuat sejajar satu-satu dengan rumusan masalah.",
      ]},
 
     {"tipe": "kolom", "judul": "Batasan Masalah",
-     "sub": "BAB I · 1.4", "sz": 1400,
-     "kiri": ("Objek dan lingkup", [
-        ("b", "SneakersFlash dengan satu profil merek aktif."),
-        ("b", "Sistem berstatus *prototipe* dan masih dalam pengujian — belum "
-              "dipakai untuk operasional harian."),
-        ("b", "Modul terbatas pada produksi konten: ringkasan konten, penulisan "
-              "naskah, dan penghalusan teks."),
-        ("b", "Modul pendapatan dan performa media sosial di luar lingkup."),
+     "sub": "BAB I · 1.4", "sz": 1500,
+     "kiri": ("Lingkup", [
+        ("b", "Satu profil merek aktif."),
+        ("b", "Status *prototipe*, masih diuji — belum operasional harian."),
+        ("b", "Hanya modul produksi konten."),
+        ("b", "Pendapatan dan performa media sosial di luar lingkup."),
      ]),
-     "kanan": ("Pengukuran dan asumsi", [
-        ("b", "Model bahasa diperlakukan sebagai *kotak hitam* — tidak "
-              "dievaluasi, dibandingkan, maupun dilatih ulang."),
-        ("b", "Perbandingan efisiensi antar-proses secara keseluruhan; kontribusi "
-              "arsitektur *multi-agent* tidak diisolasi."),
-        ("b", "Konsistensi *brand voice* dinilai manusia dengan rubrik, bukan "
-              "pendeteksi teks AI otomatis."),
-        ("b", "Durasi proses lama berupa estimasi retrospektif, sehingga "
-              "pembandingan bersifat deskriptif."),
-        ("b", "Keamanan sistem dan infrastruktur penempatan tidak dibahas."),
-     ])},
-
-    {"tipe": "kolom", "judul": "Tujuan dan Manfaat Penelitian",
-     "sub": "BAB I · 1.5 dan 1.6", "sz": 1500,
-     "kiri": ("Tujuan", [
-        ("a", "Merancang dan membangun sistem otomasi produksi konten pemasaran "
-              "berbasis *multi-agent* AI pada SneakersFlash;"),
-        ("a", "Mengukur pengaruh penerapan sistem terhadap efisiensi waktu produksi "
-              "konten dibandingkan proses sebelumnya;"),
-        ("a", "Mengevaluasi sejauh mana profil merek terstruktur menjaga "
-              "konsistensi *brand voice* pada keluaran konten."),
+     "kanan": ("Pengukuran", [
+        ("b", "Model bahasa = *kotak hitam*, tidak dievaluasi."),
+        ("b", "Kontribusi arsitektur *multi-agent* tidak diisolasi."),
+        ("b", "*Brand voice* dinilai manusia, bukan pendeteksi otomatis."),
+        ("b", "Durasi lama berupa estimasi — pembandingan deskriptif."),
      ]),
-     "kanan": ("Manfaat", [
-        ("h", "Universitas Pamulang"),
-        ("s", "Rujukan penerapan AI generatif pada proses bisnis nyata dan bahan "
-              "pembanding penelitian sejenis."),
-        ("h", "Instansi"),
-        ("s", "Memangkas waktu penyiapan materi, menyeragamkan identitas merek, "
-              "dan menyediakan jejak pencatatan."),
-        ("h", "Penulis"),
-        ("s", "Menerapkan analisis dan perancangan sistem, rekayasa perangkat lunak, "
-              "serta metodologi penelitian pada masalah nyata."),
-     ])},
+     "catatan": [
+        "Batasan yang paling mungkin ditanyakan penguji: kenapa kontribusi",
+        "multi-agent tidak diisolasi. Jawabannya, antarmuka terpusat dan arsitektur",
+        "agen diterapkan bersamaan, jadi keduanya tidak dapat dipisahkan secara",
+        "jujur. Ini dinyatakan terbuka, bukan disembunyikan.",
+     ]},
 
-    {"tipe": "isi", "judul": "Penelitian Terdahulu",
-     "sub": "BAB II · 2.1 · 20 studi (10 naratif, 10 pada Tabel 2.1)",
-     "sz": 1500, "isi": [
-        ("h", "Kelompok 1 — Kajian teknologi *multi-agent*"),
-        ("s", "Tran dkk. (2025), Lin dkk. (2025), Yan dkk. (2025): mekanisme "
-              "kolaborasi antar-agen sudah dipetakan, tetapi berhenti pada tataran "
-              "konseptual."),
-        ("h", "Kelompok 2 — Penerapan pada pemasaran dan identitas merek"),
-        ("s", "Chu dkk. (2025) menempatkan agen pada sisi konsumen; Purpura dkk. "
-              "(2025) pada penelaahan materi yang sudah ada — sisi produksi "
-              "belum tergarap."),
-        ("s", "Kirkby dkk. (2023): pengungkapan AI tidak merusak persepsi keaslian; "
-              "Wang dkk. (2025): model kesulitan meniru gaya yang tidak dinyatakan "
-              "eksplisit."),
-        ("h", "Kelompok 3 — Rancang bangun sistem informasi di Indonesia"),
-        ("s", "Yusna dkk. (2025), Yunus dkk. (2025), Hanum dkk. (2026), dan lainnya: "
-              "pengujian berhenti pada kesesuaian fungsi (*black box*), tanpa "
-              "menilai mutu luaran."),
+    {"tipe": "kartu", "judul": "Penelitian Terdahulu",
+     "sub": "BAB II · 2.1 · 20 studi", "tinggi": 2377440,
+     "kartu": [
+        ("Kajian *multi-agent*",
+         ["Tran dkk. (2025), Lin dkk. (2025),",
+          "Yan dkk. (2025).",
+          "Mekanisme sudah dipetakan,",
+          "tetapi berhenti di tataran konsep."]),
+        ("Pemasaran dan merek",
+         ["Chu dkk. (2025) di sisi konsumen.",
+          "Wang dkk. (2025): model sulit meniru",
+          "gaya yang tidak dinyatakan eksplisit."]),
+        ("Rancang bangun di Indonesia",
+         ["Yusna dkk. (2025), Yunus dkk. (2025),",
+          "Hanum dkk. (2026), dan lainnya.",
+          "Pengujian berhenti pada",
+          "kesesuaian fungsi."]),
+     ],
+     "kaki": [("t", "Tidak satu pun menilai mutu materi yang dihasilkan sistem.")],
+     "catatan": [
+        "20 studi: 10 diuraikan naratif di 2.1, 10 diringkas pada Tabel 2.1.",
+        "Temuan Wang dkk. (2025) paling penting buat penelitian ini — justru itu",
+        "yang dijawab profil merek terstruktur: gaya dibuat eksplisit dan terbaca",
+        "mesin, bukan dibiarkan tersirat.",
      ]},
 
     {"tipe": "isi", "judul": "Celah Riset",
-     "sub": "BAB II · 2.1", "sz": 1650,
-     "sorot": "Belum ditemukan penelitian yang memenuhi keempat hal berikut sekaligus",
+     "sub": "BAB II · 2.1", "sz": 1750,
+     "sorot": "Belum ada penelitian yang memenuhi keempatnya sekaligus",
      "isi": [
-        ("a", "Merancang sistem produksi konten pemasaran untuk proses kerja yang "
-              "*nyata*, bukan simulasi;"),
-        ("a", "Menerapkan arsitektur *multi-agent* dengan pembagian tugas per modul;"),
-        ("a", "Menggunakan profil merek terstruktur sebagai konteks — menjawab "
-              "keterbatasan peniruan gaya yang ditemukan Wang dkk. (2025);"),
-        ("a", "Mengukur dampak pada dua sisi sekaligus, yaitu efisiensi waktu dan "
-              "konsistensi *brand voice*, dalam konteks ritel berbahasa Indonesia."),
+        ("a", "Untuk proses kerja yang *nyata*, bukan simulasi;"),
+        ("a", "Arsitektur *multi-agent* dengan pembagian tugas per modul;"),
+        ("a", "Profil merek terstruktur sebagai konteks;"),
+        ("a", "Diukur dua sisi: efisiensi waktu dan konsistensi *brand voice*."),
+     ],
+     "catatan": [
+        "Kalau penguji bertanya apa barunya, jawab dari slide ini. Bukan salah satu",
+        "dari keempatnya — gabungan keempatnya, dalam konteks ritel berbahasa",
+        "Indonesia.",
      ]},
 
-    {"tipe": "kolom", "judul": "Landasan Teori",
-     "sub": "BAB II · 2.2", "sz": 1500,
-     "kiri": ("Domain dan teknologi", [
-        ("b", "Produksi konten pemasaran digital"),
-        ("b", "Kecerdasan buatan generatif dan model bahasa besar"),
-        ("b", "Agen cerdas dan sistem *multi-agent*"),
-        ("b", "*Brand voice* dan konsistensi identitas merek"),
-        ("b", "Otomasi alur kerja dan antrian tugas"),
-     ]),
-     "kanan": ("Rekayasa dan pengukuran", [
-        ("b", "Arsitektur aplikasi web dan REST API"),
-        ("b", "Metode perancangan sistem *Rapid Application Development*"),
-        ("b", "Rubrik penilaian dan kesepakatan antar-penilai"),
-        ("b", "Notasi perancangan sistem (UML dan ERD)"),
-     ])},
+    {"tipe": "cip", "judul": "Landasan Teori", "sub": "BAB II · 2.2",
+     "cip": [
+        ("Domain dan teknologi",
+         ["Produksi konten digital", "AI generatif dan LLM",
+          "Agen cerdas dan *multi-agent*", "*Brand voice*",
+          "Otomasi alur kerja dan antrian"]),
+        ("Rekayasa dan pengukuran",
+         ["Arsitektur web dan REST API", "*Rapid Application Development*",
+          "Rubrik dan kesepakatan antar-penilai", "UML dan ERD"]),
+     ],
+     "catatan": [
+        "Sembilan sub-bab landasan teori. Tidak perlu dibacakan satu-satu;",
+        "sebut saja pengelompokannya lalu lanjut.",
+     ]},
 
     {"tipe": "gambar", "judul": "Kerangka Berpikir",
-     "sub": "BAB II · 2.3", "sz": 1450, "gambar": "Gambar 2.1",
+     "sub": "BAB II · 2.3", "sz": 1600, "gambar": "Gambar 2.1",
      "isi": [
-        ("h", "Masalah"),
-        ("s", "Waktu penyiapan panjang; gaya bahasa tidak konsisten antar admin."),
-        ("h", "Tinjauan"),
-        ("s", "Teori *multi-agent* dan konteks terstruktur; penelitian terdahulu "
-              "menunjukkan celah pada sisi produksi."),
-        ("h", "Rancangan"),
-        ("s", "Empat agen per modul, profil merek sebagai konteks, pencatatan "
-              "setiap proses."),
-        ("h", "Pengujian"),
-        ("s", "Pengukuran waktu produksi dan penilaian rubrik secara buta."),
-        ("h", "Hasil yang diharapkan"),
-        ("s", "Waktu produksi menurun dan konsistensi *brand voice* meningkat."),
-     ]},
-
-    {"tipe": "gambar", "judul": "Analisis Sistem yang Sedang Berjalan",
-     "sub": "BAB III · 3.1.1 dan 3.1.2", "sz": 1500, "gambar": "Gambar 3.1",
-     "isi": [
-        ("b", "Admin menyusun sendiri ringkasan konten, naskah unggahan, dan naskah "
-              "iklan secara manual."),
-        ("b", "Sebagian admin memakai AI lewat antarmuka percakapan umum dengan "
-              "perintah yang disusun sendiri, tanpa acuan bersama."),
-        ("b", "Tidak ada berkas acuan yang mengikat mengenai gaya bahasa merek."),
-        ("b", "Tidak ada pencatatan atas naskah yang dihasilkan."),
-        ("h", "Empat permasalahan"),
-        ("s", "Waktu panjang · gaya bahasa tidak seragam · keluaran generik "
-              "· tidak dapat ditelusuri."),
-     ]},
-
-    {"tipe": "gambar", "judul": "Usulan Sistem — Arsitektur Tiga Lapis",
-     "sub": "BAB III · 3.1.3", "sz": 1500, "gambar": "Gambar 3.2",
-     "isi": [
-        ("h", "Lapis 1 — Antarmuka pengguna"),
-        ("s", "Aplikasi web internal; tidak pernah mengakses gerbang agen maupun "
-              "basis data secara langsung."),
-        ("h", "Lapis 2 — Layanan *backend*"),
-        ("s", "Satu-satunya pintu menuju basis data dan layanan luar; mengambil "
-              "profil merek aktif dan menyertakannya ke setiap permintaan."),
-        ("h", "Lapis 3 — Gerbang agen model bahasa besar"),
-        ("s", "Empat agen: penyusun ringkasan konten, penulis naskah, penghalus "
-              "teks, dan penyusun materi iklan."),
-     ]},
-
-    {"tipe": "isi", "judul": "Pembeda — Profil Merek sebagai Konteks",
-     "sub": "BAB III · 3.1.3", "sz": 1600,
-     "sorot": "Standar merek dieksekusi sistem, bukan bergantung pada ingatan admin",
-     "isi": [
-        ("h", "Isi profil merek yang disertakan pada setiap permintaan"),
-        ("b", "Gaya bahasa · sasaran audiens · keunggulan produk"),
-        ("b", "Batasan penulisan · ajakan bertindak · pengetahuan produk "
-              "· contoh naskah"),
-        ("h", "Pengaman yang menyertainya"),
-        ("b", "Setiap proses penghasilan dicatat beserta masukan, keluaran, dan "
-              "penggunanya."),
-        ("b", "Proses gabungan dijalankan asinkron melalui antrian tugas agar "
-              "antarmuka tidak terkunci menunggu."),
-        ("b", "Manusia tetap menjadi pemeriksa akhir sebelum materi diterbitkan."),
-     ]},
-
-    {"tipe": "tabel", "judul": "Kebutuhan Fungsional",
-     "sub": "BAB III · 3.1.4 · Tabel 3.1 memuat 21 kebutuhan",
-     "lebar": [1500, 4200, 2400],
-     "kepala": ["Kode", "Kelompok kebutuhan", "Aktor"],
-     "baris": [
-        ["AUTH-01–03", "Masuk, keluar, dan ubah kata sandi", "Owner, Member"],
-        ["USER-01–03", "Menambah, menonaktifkan, dan melihat akun", "Owner"],
-        ["BRAND-01–05", "Kelola profil merek dan pilih profil aktif",
-         "Owner, Member"],
-        ["SUBJ-01–02", "Memasukkan dan menyimpan subjek produk", "Owner, Member"],
-        ["CRE-01–05", "Ringkasan konten, naskah, penghalusan, proses gabungan",
-         "Owner, Member"],
-        ["AUD-01–02", "Mencatat proses penghasilan dan melihat riwayat",
-         "Sistem, Owner"],
+        ("b", "*Masalah* — waktu panjang, gaya tidak konsisten."),
+        ("b", "*Tinjauan* — teori *multi-agent* dan konteks terstruktur."),
+        ("b", "*Rancangan* — empat agen, profil merek, pencatatan."),
+        ("b", "*Pengujian* — catat waktu dan rubrik secara buta."),
+        ("b", "*Hasil* — waktu turun, konsistensi naik."),
      ],
-     "catatan": "Modul performa media sosial dan modul pendapatan tidak dimasukkan "
-                "karena integrasinya belum aktif (batasan 1.4)."},
+     "catatan": [
+        "Alurnya lurus dari masalah ke hasil yang diharapkan. Gambar 2.1 menyusul.",
+     ]},
+
+    {"tipe": "gambar", "judul": "Sistem yang Sedang Berjalan",
+     "sub": "BAB III · 3.1.1", "sz": 1600, "gambar": "Gambar 3.1",
+     "isi": [
+        ("b", "Seluruhnya manual."),
+        ("b", "Sebagian admin memakai AI lewat antarmuka percakapan umum."),
+        ("b", "Perintah disusun sendiri, tanpa acuan bersama."),
+        ("b", "Tidak ada berkas acuan gaya bahasa."),
+        ("b", "Tidak ada pencatatan."),
+     ],
+     "catatan": [
+        "Poin yang perlu ditekankan: AI sebenarnya sudah dipakai, tetapi lepas-lepas.",
+        "Jadi penelitian ini bukan soal memperkenalkan AI, melainkan memberinya",
+        "struktur dan konteks.",
+     ]},
+
+    {"tipe": "gambar", "judul": "Usulan — Arsitektur Tiga Lapis",
+     "sub": "BAB III · 3.1.3", "sz": 1600, "gambar": "Gambar 3.2",
+     "isi": [
+        ("b", "*Antarmuka web* — tidak pernah menyentuh gerbang agen "
+              "maupun basis data."),
+        ("b", "*Layanan backend* — satu-satunya pintu ke basis data "
+              "dan layanan luar."),
+        ("b", "*Gerbang agen* — menaungi empat agen dengan tugas berbeda."),
+     ],
+     "catatan": [
+        "Aturan satu pintu ini bukan gaya-gayaan: kunci rahasia hanya ada di",
+        "peladen, dan setiap permintaan bisa dicatat karena semuanya lewat satu",
+        "tempat. Tanpa itu, pencatatan tidak dapat dijamin lengkap.",
+     ]},
+
+    {"tipe": "kartu", "judul": "Apa Arti “Agen” di Sistem Ini",
+     "sub": "BAB III · 3.1.3", "tinggi": 2377440, "sz": 1350,
+     "kartu": [
+        ("Satu model, empat agen",
+         ["Keempatnya memakai model",
+          "bahasa yang sama.",
+          "Bukan empat model berbeda."]),
+        ("Yang membedakan: ruang kerja",
+         ["Tiap agen punya foldernya sendiri",
+          "berisi SKILL.md, pengetahuan",
+          "merek, dan contoh naskah."]),
+        ("SKILL.md = kontrak kerja",
+         ["Memuat tugas, cara berpikir,",
+          "larangan, dan bentuk keluaran",
+          "yang wajib berupa JSON."]),
+     ],
+     "kaki": [("t", "Jadi pembagian tugas per modul berarti pembagian "
+                    "*instruksi dan pengetahuan*, bukan pembagian model.")],
+     "catatan": [
+        "Ini pertanyaan yang paling mungkin diajukan penguji: apa bedanya dengan",
+        "sekadar memanggil ChatGPT empat kali?",
+        "",
+        "Bedanya, tiap agen punya kontrak tertulis yang tetap dan terversi. Perintah",
+        "tidak disusun ulang tiap kali oleh admin, melainkan sudah tertanam sebagai",
+        "berkas. Isi SKILL.md dapat diperbaiki tanpa menyentuh kode backend, dan",
+        "perbaikannya langsung berlaku pada panggilan berikutnya.",
+        "",
+        "Konsekuensi metodologis: yang diuji penelitian ini adalah rancangan",
+        "pembagian tugas dan konteks, bukan model bahasanya — sesuai batasan 1.4",
+        "butir d yang memperlakukan model sebagai kotak hitam.",
+     ]},
+
+    {"tipe": "kartu", "judul": "Empat Agen dan Tugasnya",
+     "sub": "BAB III · 3.1.3", "tinggi": 2377440,
+     "kartu": [
+        ("Penyusun ringkasan",
+         ["Merumuskan sudut pandang",
+          "dan arahan visual.",
+          "Keluaran: konsep + prompt",
+          "gambar, atau brief teks."]),
+        ("Penulis naskah",
+         ["Menyusun naskah unggahan:",
+          "kalimat pembuka, isi,",
+          "ajakan bertindak, tagar."]),
+        ("Penghalus teks",
+         ["Membuang nada robotik.",
+          "Dipanggil sebagai",
+          "tahap akhir."]),
+        ("Penyusun iklan",
+         ["Menghasilkan varian naskah",
+          "iklan: kail, judul,",
+          "dan teks utama."]),
+     ],
+     "kaki": [("t", "Empat agen ini yang menjadi objek kebutuhan CRE-01 sampai "
+                    "CRE-04 pada Tabel 3.1.")],
+     "catatan": [
+        "Nama teknisnya sf-content-brief, sf-copywriting, sf-humanize, dan sf-ads.",
+        "Pemisahannya bukan sekadar kerapian: tiap agen hanya membaca aturan yang",
+        "relevan dengan tugasnya, sehingga instruksinya bisa spesifik dan panjang",
+        "tanpa saling mengganggu. Satu perintah gabungan untuk keempat tugas akan",
+        "menuntut kompromi.",
+     ]},
+
+    {"tipe": "alur", "judul": "Alur Satu Permintaan",
+     "sub": "BAB III · 3.1.3",
+     "langkah": [
+        ("Antarmuka", ["Pengguna mengirim", "data produk."]),
+        ("Ambil profil merek", ["Backend membaca profil", "merek dari basis data."]),
+        ("Pemicu tipis", ["Nama skill + data,", "tanpa perintah panjang."]),
+        ("Agen menjawab", ["Agen membaca aturannya", "sendiri (SKILL.md),",
+                           "lalu membalas JSON."]),
+        ("Haluskan dan catat", ["Nada dirapikan,", "seluruhnya dicatat."]),
+     ],
+     "kaki": [
+        ("b", "Perintah panjangnya ada pada agen, bukan pada backend — "
+              "sehingga dapat diperbaiki tanpa mengubah kode."),
+        ("b", "Tiap panggilan memakai sesi baru: bersih dari riwayat, "
+              "selalu membaca aturan terbaru, dan aman dijalankan bersamaan."),
+     ],
+     "catatan": [
+        "Langkah 3 yang paling sering disalahpahami. Backend hanya mengirim kalimat",
+        "pemicu singkat berisi nama skill dan data dalam bentuk JSON. Ia tidak",
+        "memuat perintah kreatif sama sekali.",
+        "",
+        "Langkah 4: pemilihan agen dilakukan lewat penamaan model pada permintaan.",
+        "Salah nama akan ditolak gerbang, jadi tidak mungkin diam-diam salah agen.",
+        "",
+        "Kalau keluaran bukan JSON yang sah, permintaan diulang sekali. Kalau masih",
+        "gagal, pengguna menerima pesan yang dapat ditindaklanjuti — bukan jejak",
+        "galat. Ini memenuhi kebutuhan non-fungsional keandalan pada 3.1.5.",
+     ]},
+
+    {"tipe": "kartu", "judul": "Kunci: Kenapa Keluarannya Tidak Generik",
+     "sub": "BAB III · 3.1.3 · pembeda penelitian", "tinggi": 2377440,
+     "sz": 1350,
+     "kartu": [
+        ("Konteks dari basis data",
+         ["Profil merek dibaca dari tabel,",
+          "bukan ditulis di dalam kode.",
+          "Gaya bahasa, audiens, keunggulan,",
+          "batasan, ajakan, contoh naskah."]),
+        ("Aturan anti-jiplak",
+         ["Pengetahuan merek hanya boleh",
+          "jadi rujukan latar.",
+          "Faktanya boleh dipakai,",
+          "kalimatnya tidak."]),
+        ("Aturan anti-nada mesin",
+         ["Klise dan kata korporat dilarang.",
+          "Panjang kalimat wajib",
+          "divariasikan."]),
+     ],
+     "kaki": [("t", "Kelima dimensi rubrik penilaian diturunkan dari bidang profil "
+                    "merek yang sama — jadi yang dinilai memang yang dipakai.")],
+     "catatan": [
+        "Slide ini menjawab langsung temuan Wang dkk. (2025): model kesulitan meniru",
+        "gaya yang tidak dinyatakan eksplisit. Di sini gaya dibuat eksplisit,",
+        "terstruktur, dan tersimpan sebagai data — bukan tersirat dalam contoh.",
+        "",
+        "Karena profilnya data, ia dapat diubah pemilik merek lewat antarmuka tanpa",
+        "menyentuh kode, dan dapat dipakai ulang untuk merek lain. Itu menjawab",
+        "persoalan kelima pada identifikasi masalah.",
+        "",
+        "Aturan anti-jiplak penting untuk dijelaskan: tanpa itu, sistem cenderung",
+        "menyalin ulang contoh naskah, sehingga tampak konsisten tetapi tidak",
+        "menghasilkan gagasan baru.",
+     ]},
+
+    {"tipe": "alur", "judul": "Proses Gabungan yang Berjalan di Latar",
+     "sub": "BAB III · 3.1.3 · CRE-04",
+     "langkah": [
+        ("Diminta", ["Pengguna memilih subjek,", "menerima nomor tugas."]),
+        ("Masuk antrian", ["Tugas dititipkan ke antrian,", "antarmuka tidak terkunci."]),
+        ("Dikerjakan", ["Dua ringkasan digarap", "bersamaan, lalu naskah,", "lalu iklan."]),
+        ("Tersimpan", ["Hasil disimpan utuh,", "status berubah menjadi", "selesai atau gagal."]),
+     ],
+     "kaki": [
+        ("b", "Menjawab kebutuhan non-fungsional 3.1.5: antarmuka tidak boleh "
+              "terkunci menunggu proses yang panjang."),
+     ],
+     "catatan": [
+        "Satu perintah menghasilkan beberapa materi sekaligus. Kalau dijalankan",
+        "serentak di antarmuka, pengguna harus menunggu satu sampai dua menit dengan",
+        "layar terkunci; karena itu dipindah ke latar.",
+        "",
+        "Dua ringkasan digarap bersamaan karena keduanya tidak saling bergantung.",
+        "Naskah dan iklan menyusul berurutan karena memakai hasil sebelumnya.",
+        "",
+        "Kalau gagal, statusnya menjadi gagal berikut pesannya — tidak menggantung",
+        "dalam keadaan sedang diproses selamanya.",
+     ]},
 
     {"tipe": "kolom", "judul": "Metode Penelitian",
-     "sub": "BAB III · 3.2.1 dan 3.2.2", "sz": 1500,
+     "sub": "BAB III · 3.2", "sz": 1550,
      "kiri": ("Pendekatan campuran", [
-        ("b", "*Kuantitatif* — mengukur efisiensi waktu produksi konten "
-              "sebelum dan sesudah sistem diterapkan."),
-        ("b", "*Kuantitatif berbasis penilaian* — menilai konsistensi "
-              "*brand voice* melalui rubrik yang diisi penilai."),
-        ("b", "*Kualitatif terbatas* — observasi dan wawancara untuk memahami "
-              "proses berjalan dan menyusun kebutuhan."),
+        ("b", "*Kuantitatif* — mengukur efisiensi waktu."),
+        ("b", "*Berbasis penilaian* — rubrik *brand voice*."),
+        ("b", "*Kualitatif terbatas* — observasi dan wawancara."),
      ]),
      "kanan": ("Pengumpulan data", [
-        ("a", "Observasi proses penyiapan materi yang berjalan;"),
-        ("a", "Wawancara dengan admin yang menjalankan proses;"),
-        ("a", "Dokumentasi catatan waktu dan arsip naskah terbit;"),
-        ("a", "Eksperimen penghasilan naskah untuk dinilai konsistensinya."),
-     ])},
+        ("a", "Observasi proses berjalan;"),
+        ("a", "Wawancara dengan admin;"),
+        ("a", "Dokumentasi waktu dan arsip naskah;"),
+        ("a", "Eksperimen penghasilan naskah."),
+     ]),
+     "catatan": [
+        "Analisis waktu memakai median dan rentang, bukan rata-rata, karena data",
+        "proses lama sebarannya lebar dan mudah terdistorsi kasus 12 jam itu.",
+        "Tidak ada uji statistik parametrik karena syarat pengukuran setara pada",
+        "kedua kelompok tidak terpenuhi.",
+     ]},
 
-    {"tipe": "tabel", "judul": "Instrumen Penelitian — Rubrik *Brand Voice*",
+    {"tipe": "tabel", "judul": "Rubrik Konsistensi *Brand Voice*",
      "sub": "BAB III · 3.2.4 · Tabel 3.2",
      "lebar": [2600, 5500],
      "kepala": ["Dimensi", "Yang dinilai pada skor tertinggi (4)"],
      "baris": [
-        ["Gaya bahasa", "Nada, sapaan, dan tingkat formalitas konsisten di "
-                        "seluruh teks"],
-        ["Sasaran audiens", "Diksi dan rujukan tepat sasaran di seluruh teks"],
-        ["Keunggulan produk", "Keunggulan utama tersampaikan jelas sesuai profil merek"],
+        ["Gaya bahasa", "Nada, sapaan, dan formalitas konsisten di seluruh teks"],
+        ["Sasaran audiens", "Diksi dan rujukan tepat sasaran"],
+        ["Keunggulan produk", "Keunggulan utama tersampaikan sesuai profil merek"],
         ["Kepatuhan batasan", "Seluruh batasan penulisan dipatuhi"],
         ["Ajakan bertindak", "Bentuk dan penempatan sesuai profil merek"],
      ],
-     "sorot": "Lima dimensi × skor 1–4 → skor maksimal 20 · "
-              "17–20 sangat konsisten, 13–16 konsisten, "
-              "9–12 cukup, 5–8 tidak konsisten",
-     "catatan": "Dimensi diturunkan dari bidang pada profil merek di sistem, "
-                "sehingga penilaian dapat ditelusuri ke acuan yang benar-benar "
-                "dipakai saat naskah dihasilkan. Instrumen kedua: lembar catat waktu."},
-
-    {"tipe": "isi", "judul": "Rancangan Pengujian",
-     "sub": "BAB III · 3.2.5", "sz": 1600,
-     "sorot": "Peneliti adalah bagian dari instansi yang diteliti — "
-              "lima pengaman ditetapkan untuk menekan keberpihakan",
-     "isi": [
-        ("a", "Penilaian dilakukan secara *buta*: penilai tidak tahu naskah mana "
-              "yang dihasilkan dengan konteks merek dan mana yang tanpa;"),
-        ("a", "Urutan penyajian sampel diacak sehingga tidak membentuk pola;"),
-        ("a", "Sekurang-kurangnya tiga penilai bekerja mandiri tanpa berdiskusi;"),
-        ("a", "Kesepakatan antar-penilai dihitung dan dilaporkan, bukan disembunyikan;"),
-        ("a", "Peneliti tidak bertindak sebagai penilai."),
-        ("h", "Pengujian fungsional"),
-        ("s", "Metode *black box* terhadap seluruh kebutuhan pada Tabel 3.1."),
+     "sorot": "Lima dimensi × skor 1–4 → maksimal 20 · "
+              "17–20 sangat konsisten · 5–8 tidak konsisten",
+     "catatan": [
+        "Kelima dimensi diturunkan dari bidang profil merek pada sistem, sehingga",
+        "penilaian dapat ditelusuri ke acuan yang benar-benar dipakai saat naskah",
+        "dihasilkan. Deskriptor tiap tingkat ditulis operasional agar penilai tidak",
+        "menafsirkan sendiri batas antar-tingkat.",
+        "",
+        "Yang masih terbuka dan jujur disampaikan: batas kategori bersifat usulan,",
+        "dan validitas isinya perlu ditelaah pembimbing sebelum penilaian dimulai.",
      ]},
 
-    {"tipe": "kolom", "judul": "Metode Analisis Data",
-     "sub": "BAB III · 3.2.6", "sz": 1500,
-     "kiri": ("Waktu produksi konten", [
-        ("b", "Statistik deskriptif: nilai terendah, tertinggi, *median*, dan rentang."),
-        ("b", "Median dan rentang dipilih karena data proses lama berupa estimasi "
-              "dengan sebaran lebar — rata-rata mudah terdistorsi kasus ekstrem."),
-        ("b", "Tanpa uji statistik parametrik: syarat pengukuran setara pada kedua "
-              "kelompok tidak terpenuhi."),
-        ("b", "Penyempitan rentang dilaporkan sebagai indikator keterdugaan proses."),
-     ]),
-     "kanan": ("Skor rubrik dan kejujuran klaim", [
-        ("b", "Statistik deskriptif per dimensi, dibandingkan antara naskah dengan "
-              "konteks merek dan tanpa konteks merek."),
-        ("b", "Kesepakatan antar-penilai dihitung dengan koefisien yang sesuai "
-              "jumlah penilai dan skala."),
-        ("b", "Penelitian *tidak* mengklaim penurunan waktu semata-mata disebabkan "
-              "arsitektur *multi-agent* — antarmuka terpusat diterapkan "
-              "bersamaan. Keterbatasan ini dinyatakan pada 1.4."),
-     ])},
+    {"tipe": "isi", "judul": "Rancangan Pengujian",
+     "sub": "BAB III · 3.2.5", "sz": 1700,
+     "sorot": "Peneliti bagian dari instansi yang diteliti — "
+              "lima pengaman ditetapkan",
+     "isi": [
+        ("a", "Penilaian *buta*: penilai tidak tahu asal-usul naskah;"),
+        ("a", "Urutan sampel diacak;"),
+        ("a", "Sekurang-kurangnya tiga penilai, bekerja mandiri;"),
+        ("a", "Kesepakatan antar-penilai dilaporkan, bukan disembunyikan;"),
+        ("a", "Peneliti tidak menjadi penilai."),
+     ],
+     "catatan": [
+        "Ini keberatan yang paling mungkin diajukan, jadi lebih baik disampaikan",
+        "lebih dulu daripada menunggu ditanya.",
+        "",
+        "Yang belum ditetapkan dan sebaiknya diakui terbuka: jumlah naskah yang",
+        "diuji serta jumlah dan asal penilai. Keduanya menunggu materi terkumpul.",
+        "Penilai dari luar tim jauh lebih kuat menahan keberatan soal keberpihakan.",
+        "",
+        "Pengujian fungsional memakai metode black box terhadap Tabel 3.1.",
+     ]},
 
     {"tipe": "gambar", "judul": "Metode Perancangan Sistem — RAD",
-     "sub": "BAB III · 3.3", "sz": 1450, "gambar": "Gambar 3.5",
+     "sub": "BAB III · 3.3", "sz": 1600, "gambar": "Gambar 3.5",
      "isi": [
-        ("h", "1. Requirements Planning"),
-        ("s", "Observasi, wawancara, dan dokumen acuan (SRS, IA, DS, alur pengguna) "
-              "diselesaikan sebelum penulisan kode."),
-        ("h", "2. User Design"),
-        ("s", "Kerangka aplikasi, tata letak dan navigasi, serta struktur basis data; "
-              "ditinjau pengguna dan diperbaiki."),
-        ("h", "3. Construction"),
-        ("s", "Dibangun bertahap per bagian fungsi, tiap bagian diuji begitu selesai. "
-              "Konteks merek disempurnakan saat keluaran dinilai terlalu umum."),
-        ("h", "4. Cutover"),
-        ("s", "Penempatan dalam wadah pada peladen uji dan pengujian menyeluruh. "
-              "Penerapan operasional harian di luar lingkup."),
+        ("b", "*Requirements Planning* — observasi, wawancara, dokumen acuan."),
+        ("b", "*User Design* — rancangan antarmuka dan basis data."),
+        ("b", "*Construction* — dibangun bertahap, tiap bagian diuji."),
+        ("b", "*Cutover* — penempatan ke peladen uji."),
+     ],
+     "catatan": [
+        "Kenapa RAD, bukan Waterfall: putaran umpan baliknya nyata. Konteks merek",
+        "baru ditambahkan setelah keluaran prototipe dinilai masih terlalu umum —",
+        "itu perubahan rancangan di tengah jalan, yang justru ciri RAD.",
+        "Rentang pengerjaan 60 hari juga cocok dengan siklus pendek RAD.",
      ]},
 
     {"tipe": "tabel", "judul": "Jadwal Penelitian",
@@ -570,7 +747,10 @@ SLIDE = [
         ["Implementasi dan penyempurnaan sistem", "", "", "X", "X", ""],
         ["Pengumpulan materi dan penilaian rubrik", "", "", "", "X", ""],
         ["Pengukuran waktu produksi konten", "", "", "", "X", ""],
-        ["Analisis hasil dan penyusunan laporan", "", "", "", "X", "X"],
+        ["Analisis hasil dan penyusunan laporan", "", "", "X", "X", ""],
+     ],
+     "catatan": [
+        "Lima bulan, September 2026 sampai Januari 2027.",
      ]},
 
     {"tipe": "penutup"},
@@ -653,11 +833,13 @@ def slide_tabel(s, k):
         y = sorot(k, y, s["sorot"], 1300)
     k.tabel(TEPI, y, LEBAR, s["lebar"], s["kepala"], s["baris"],
             sz=s.get("sz", 1250))
-    if s.get("catatan"):
+    # "nota" = keterangan kaki tabel di slide; "catatan" dipakai untuk
+    # catatan pembicara, jadi kuncinya sengaja dibedakan.
+    if s.get("nota"):
         n = len(s["baris"]) + 1
         y_cat = y + 320040 + (n - 1) * 288000 + 274320
         k.kotak(TEPI, min(y_cat, Y_KAKI - 500000), LEBAR, 500000,
-                par(s["catatan"], "t", 1200, REDUP, 0))
+                par(s["nota"], "t", 1200, REDUP, 0))
 
 
 def rakit(s, nomor, total):
@@ -668,8 +850,9 @@ def rakit(s, nomor, total):
         slide_penutup(k)
     else:
         kepala(k, s["judul"], s.get("sub"))
-        {"isi": slide_isi, "kolom": slide_kolom,
-         "gambar": slide_gambar, "tabel": slide_tabel}[s["tipe"]](s, k)
+        {"isi": slide_isi, "kolom": slide_kolom, "gambar": slide_gambar,
+         "tabel": slide_tabel, "kartu": slide_kartu, "alur": slide_alur,
+         "angka": slide_angka, "cip": slide_cip}[s["tipe"]](s, k)
     kaki(k, nomor, total)
     return k.xml()
 
@@ -729,6 +912,32 @@ MASTER = (DEKL + f'<p:sldMaster {NS}>{KOSONG_TREE}'
 LAYOUT = (DEKL + f'<p:sldLayout {NS} type="blank" preserve="1">{KOSONG_TREE}'
           '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>')
 
+NOTES_MASTER = (DEKL + f'<p:notesMaster {NS}>{KOSONG_TREE}'
+                '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" '
+                'accent1="accent1" accent2="accent2" accent3="accent3" '
+                'accent4="accent4" accent5="accent5" accent6="accent6" '
+                'hlink="hlink" folHlink="folHlink"/>'
+                '<p:notesStyle/></p:notesMaster>')
+
+
+def notes_xml(teks):
+    """Catatan pembicara: satu paragraf per baris."""
+    isi = "".join(
+        f'<a:p><a:r><a:rPr lang="id-ID" dirty="0"/>'
+        f'<a:t>{esc(b)}</a:t></a:r></a:p>' for b in teks)
+    return (DEKL + f'<p:notes {NS}><p:cSld><p:spTree>'
+            '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/>'
+            '</p:nvGrpSpPr><p:grpSpPr><a:xfrm>'
+            '<a:off x="0" y="0"/><a:ext cx="0" cy="0"/>'
+            '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
+            '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Catatan"/>'
+            '<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr>'
+            '<p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/>'
+            f'<p:txBody><a:bodyPr/><a:lstStyle/>{isi}</p:txBody></p:sp>'
+            '</p:spTree></p:cSld>'
+            '<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:notes>')
+
+
 GAYA_TABEL = (DEKL + '<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/'
               'drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>')
 
@@ -767,12 +976,19 @@ def bangun(keluaran):
           'openxmlformats-officedocument.theme+xml"/>',
           '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.'
           'openxmlformats-officedocument.presentationml.tableStyles+xml"/>',
+          '<Override PartName="/ppt/notesMasters/notesMaster1.xml" ContentType='
+          '"application/vnd.openxmlformats-officedocument.presentationml.notesMaster'
+          '+xml"/>',
           '<Override PartName="/docProps/core.xml" ContentType="application/vnd.'
           'openxmlformats-package.core-properties+xml"/>']
     for i in range(1, total + 1):
         ct.append(f'<Override PartName="/ppt/slides/slide{i}.xml" ContentType='
                   '"application/vnd.openxmlformats-officedocument.presentationml.'
                   'slide+xml"/>')
+        if SLIDE[i - 1].get("catatan"):
+            ct.append(f'<Override PartName="/ppt/notesSlides/notesSlide{i}.xml" '
+                      'ContentType="application/vnd.openxmlformats-officedocument.'
+                      'presentationml.notesSlide+xml"/>')
     ct.append("</Types>")
 
     daftar = "".join(f'<p:sldId id="{255 + i}" r:id="rId{10 + i}"/>'
@@ -780,13 +996,16 @@ def bangun(keluaran):
     pres = (DEKL + f'<p:presentation {NS} saveSubsetFonts="1">'
             '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/>'
             '</p:sldMasterIdLst>'
+            '<p:notesMasterIdLst><p:notesMasterId r:id="rId4"/>'
+            '</p:notesMasterIdLst>'
             f'<p:sldIdLst>{daftar}</p:sldIdLst>'
             f'<p:sldSz cx="{W}" cy="{H}"/><p:notesSz cx="{H}" cy="{W}"/>'
             '</p:presentation>')
 
     pres_rel = [("rId1", "slideMaster", "slideMasters/slideMaster1.xml"),
                 ("rId2", "theme", "theme/theme1.xml"),
-                ("rId3", "tableStyles", "tableStyles.xml")]
+                ("rId3", "tableStyles", "tableStyles.xml"),
+                ("rId4", "notesMaster", "notesMasters/notesMaster1.xml")]
     pres_rel += [(f"rId{10 + i}", "slide", f"slides/slide{i}.xml")
                  for i in range(1, total + 1)]
 
@@ -817,10 +1036,20 @@ def bangun(keluaran):
         z.writestr("ppt/slideLayouts/slideLayout1.xml", LAYOUT)
         z.writestr("ppt/slideLayouts/_rels/slideLayout1.xml.rels", rel_xml([
             ("rId1", "slideMaster", "../slideMasters/slideMaster1.xml")]))
+        z.writestr("ppt/notesMasters/notesMaster1.xml", NOTES_MASTER)
+        z.writestr("ppt/notesMasters/_rels/notesMaster1.xml.rels", rel_xml([
+            ("rId1", "theme", "../theme/theme1.xml")]))
         for i, isi in enumerate(slides, 1):
             z.writestr(f"ppt/slides/slide{i}.xml", isi)
-            z.writestr(f"ppt/slides/_rels/slide{i}.xml.rels", rel_xml([
-                ("rId1", "slideLayout", "../slideLayouts/slideLayout1.xml")]))
+            rel = [("rId1", "slideLayout", "../slideLayouts/slideLayout1.xml")]
+            catatan = SLIDE[i - 1].get("catatan")
+            if catatan:
+                rel.append(("rId2", "notesSlide", f"../notesSlides/notesSlide{i}.xml"))
+                z.writestr(f"ppt/notesSlides/notesSlide{i}.xml", notes_xml(catatan))
+                z.writestr(f"ppt/notesSlides/_rels/notesSlide{i}.xml.rels", rel_xml([
+                    ("rId1", "slide", f"../slides/slide{i}.xml"),
+                    ("rId2", "notesMaster", "../notesMasters/notesMaster1.xml")]))
+            z.writestr(f"ppt/slides/_rels/slide{i}.xml.rels", rel_xml(rel))
     return total
 
 
