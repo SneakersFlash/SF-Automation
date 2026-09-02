@@ -26,7 +26,7 @@ Judul:
 | `daftar-pustaka.md` | Rujukan terverifikasi, gaya APA. Tumbuh seiring bab bertambah. |
 | `*.docx` | Hasil rakitan, format sudah sesuai pedoman. Jangan disunting langsung — akan tertimpa. |
 | `build_docx.py` | Perakit `.md` → `.docx`. Stdlib saja, tanpa dependensi. |
-| `sidang-proposal.pptx` | **Slide sidang proposal.** 24 slide, 16:9. |
+| `sidang-proposal.pptx` | **Slide sidang proposal.** 14 slide, 16:9. |
 | `build_pptx.py` | Perakit slide. Isi slide ada pada daftar `SLIDE` di dalamnya. |
 | `cek_pptx.py` | Pemeriksa paket `.pptx`: XML, rujukan, luapan teks. |
 | `render_pptx.py` | Merender slide jadi PNG memakai PIL, untuk dilihat sebelum sidang. |
@@ -108,15 +108,25 @@ Isi tiap slide ditulis pada daftar `SLIDE` di dalam `build_pptx.py` — sunting 
 lalu rakit ulang. Jangan menyunting `.pptx` lalu merakit ulang; hasil suntingan akan
 tertimpa.
 
-Slide sengaja dibuat ringkas; uraiannya ada di **catatan pembicara** (22 dari 24 slide).
-Buka lewat View → Notes Page, atau Presenter View saat sidang. Tulis di kunci `catatan`
-berupa daftar baris; kunci `nota` yang mirip namanya dipakai untuk keterangan kaki tabel
-di badan slide, bukan catatan pembicara.
+Slide sengaja dibuat ringkas; uraiannya ada di **catatan pembicara** (12 dari 14 slide,
+semua kecuali halaman judul dan penutup). Buka lewat View → Notes Page, atau Presenter
+View saat sidang. Tulis di kunci `catatan` berupa daftar baris; kunci `nota` yang mirip
+namanya dipakai untuk keterangan kaki tabel di badan slide, bukan catatan pembicara.
 
-Lima slide menerangkan cara sistem bekerja sebagai *multi-agent* — bagian yang tidak
-dapat dibaca dari naskah karena diturunkan langsung dari kode: arti "agen" di sistem ini
-(satu model, empat ruang kerja), keempat agen dan tugasnya, alur satu permintaan,
-kunci anti-generik, dan proses gabungan yang berjalan di latar.
+Lima slide menerangkan cara sistem bekerja — bagian yang tidak dapat dibaca dari naskah
+karena diturunkan langsung dari kode: gerbang agen (satu model, empat ruang kerja), alur
+satu permintaan, kunci anti-generik, alur generasi gambar, dan peta integrasi berikut
+statusnya.
+
+**Lingkup pada slide integrasi.** Batasan 1.4 butir c membatasi modul yang diteliti pada
+ringkasan konten, penulisan naskah, dan penghalusan teks. Generasi gambar (kie.ai) dan
+integrasi lokapasar serta media sosial **tidak** termasuk di dalamnya, jadi slide 10 dan
+11 menandainya tegas sebagai bagian sistem, bukan bagian pengukuran. Kalau salah satunya
+hendak ikut dinilai, batasan di naskah harus direvisi lebih dulu.
+
+Nama produk sengaja tidak dipakai di badan slide (memakai *gerbang agen*, *layanan
+gambar*, *lokapasar*) supaya sejajar dengan naskah; nama aslinya ada di catatan
+pembicara.
 
 Empat penanda `[ sisipkan ... ]` menunggu berkas gambar: logo Unpam pada halaman judul,
 lalu Gambar 2.1, 3.1, 3.2, dan 3.5. Nama pembimbing pada halaman judul juga masih
